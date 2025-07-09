@@ -6,6 +6,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageList = document.querySelector('.message-list');
     const craftBody = document.querySelector('.craft-body');
     const messageListContainer = document.querySelector('.message-list-container');
+    
+    // Tab switching functionality
+    const tabItems = document.querySelectorAll('.tab-item');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    
+    tabItems.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs and panels
+            tabItems.forEach(item => item.classList.remove('active'));
+            tabPanels.forEach(panel => panel.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            tab.classList.add('active');
+            
+            // Get the target panel id from the tab's data-tab attribute
+            const targetId = tab.getAttribute('data-tab');
+            if (targetId) {
+                // Add active class to the corresponding panel
+                const targetPanel = document.getElementById(targetId);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                }
+            }
+        });
+    });
 
     // Handle card clicks
     document.querySelectorAll('.card').forEach(card => {

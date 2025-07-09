@@ -229,10 +229,138 @@
         <div id="settings" class="tab-panel">
             <!-- SETTINGS_CONTENT_PLACEHOLDER -->
         </div>
-        <!-- Other panels... -->
+        <div id="code-review" class="tab-panel">
+            <h2>Code Review</h2>
+            <p>The Code Review feature is coming soon.</p>
+        </div>
+        <div id="unit-test" class="tab-panel">
+            <h2>Unit Test</h2>
+            <p>The Unit Test feature is coming soon.</p>
+        </div>
+        <div id="module-test" class="tab-panel">
+            <h2>Module Test</h2>
+            <p>The Module Test feature is coming soon.</p>
+        </div>
     </div>
 
-    <script src="./webview.js">
+    <script>
+    const vscode = acquireVsCodeApi();
+
+    // 使用window.onload事件，确保DOM和所有资源都已加载
+    window.onload = function() {
+        // 首先处理tab切换功能，这是最重要的
+        const tabItems = document.querySelectorAll('.tab-item');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        
+        console.log('Tab items:', tabItems.length);
+        console.log('Tab panels:', tabPanels.length);
+        
+        if (tabItems.length > 0 && tabPanels.length > 0) {
+            tabItems.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    console.log('Tab clicked:', tab.getAttribute('data-tab'));
+                    
+                    // Remove active class from all tabs and panels
+                    tabItems.forEach(item => item.classList.remove('active'));
+                    tabPanels.forEach(panel => panel.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    tab.classList.add('active');
+                    
+                    // Get the target panel id from the tab's data-tab attribute
+                    const targetId = tab.getAttribute('data-tab');
+                    if (targetId) {
+                        // Add active class to the corresponding panel
+                        const targetPanel = document.getElementById(targetId);
+                        if (targetPanel) {
+                            targetPanel.classList.add('active');
+                            console.log('Activated panel:', targetId);
+                        } else {
+                            console.error('Panel not found:', targetId);
+                        }
+                    }
+                });
+            });
+        } else {
+            console.error('Tab items or panels not found');
+        }
+        
+        // 其他UI元素的处理
+        const messageInput = document.querySelector('.message-input');
+        const sendButton = document.querySelector('.send-button');
+        const messageList = document.querySelector('.message-list');
+        const craftBody = document.querySelector('.craft-body');
+        const messageListContainer = document.querySelector('.message-list-container');
+        
+        // Handle card clicks
+        const cards = document.querySelectorAll('.card');
+        if (cards.length > 0) {
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const action = card.dataset.action;
+                    if (action) {
+                        vscode.postMessage({ command: 'craft-action', action: action });
+                        if (craftBody) craftBody.style.display = 'none';
+                        if (messageListContainer) messageListContainer.style.display = 'flex';
+                    }
+                });
+            });
+        }
+
+        // Handle message sending if the elements exist
+        if (sendButton && messageInput && messageList) {
+            sendButton.addEventListener('click', () => {
+                const message = messageInput.value;
+                if (message) {
+                    vscode.postMessage({ command: 'send-message', text: message });
+                    messageInput.value = '';
+                    addMessage('user', message);
+                    messageInput.style.height = 'auto';
+                    sendButton.disabled = true;
+                }
+            });
+
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendButton.click();
+                }
+            });
+
+            // Auto-resize textarea and manage send button state
+            messageInput.addEventListener('input', () => {
+                messageInput.style.height = 'auto';
+                messageInput.style.height = (messageInput.scrollHeight) + 'px';
+                sendButton.disabled = messageInput.value.trim() === '';
+            });
+
+            // Initial state of the send button
+            sendButton.disabled = true;
+        }
+
+        // Handle messages from the extension
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.command) {
+                case 'add-message':
+                    if (typeof addMessage === 'function') {
+                        addMessage(message.type, message.text);
+                    }
+                    break;
+            }
+        });
+
+        // Define addMessage function only if messageList exists
+        function addMessage(type, text) {
+            if (!messageList) return;
+            
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            messageElement.textContent = text;
+            messageList.appendChild(messageElement);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+    };
     </script>
 </body>
 </html>
