@@ -215,6 +215,13 @@ class LineraPanelViewProvider implements vscode.WebviewViewProvider {
         // Inject settings page content
         html = html.replace('<!-- SETTINGS_CONTENT_PLACEHOLDER -->', settingsPageHtml);
 
+        // Convert the CSS file path to a URI that the webview can use
+        const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'webview.css'));
+        html = html.replace(
+            /<link rel="stylesheet" href="webview.css">/,
+            `<link rel="stylesheet" href="${cssUri}">`
+        );
+
         // Since we've embedded the JavaScript code directly in the HTML file,
         // we no longer need to replace the script tag.
         // If we want to use external script files in the future, we can uncomment the following code:
