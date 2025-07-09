@@ -218,7 +218,7 @@ class LineraPanelViewProvider implements vscode.WebviewViewProvider {
         // Get URI for the webview script and replace the placeholder
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'webview.js'));
         html = html.replace(
-            /<script>\s*<\/script>/,
+            /<script src=".\/webview.js"><\/script>/,
             `<script src="${scriptUri}"></script>`
         );
 
