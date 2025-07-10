@@ -1,6 +1,6 @@
 <template>
-  <q-input v-model="message" type="textarea" autogrow :min-rows="4" :max-rows="6" class="message-input"
-    style="min-height: 128px; max-height: 200px; border: 1px solid #ccc;" @keydown.enter.prevent="sendMessage">
+  <q-input v-model="message" type="textarea" outlined rounded dark autogrow :max-rows="6"
+    style="max-height: 200px;" @keydown.enter.prevent="sendMessage" aria-placeholder="Type your task here...">
     <template v-slot:append>
       <q-btn round dense flat icon="send" @click="sendMessage" class="send-button" />
     </template>
@@ -22,12 +22,6 @@ const sendMessage = () => {
 </script>
 
 <style scoped>
-.message-input {
-  padding-right: 40px;
-  /* Make space for the button */
-  border-radius: 8px;
-}
-
 .send-button {
   position: absolute;
   right: 8px;
