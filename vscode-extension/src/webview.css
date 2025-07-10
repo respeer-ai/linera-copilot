@@ -51,13 +51,15 @@ body, html {
     overflow-y: auto;
 }
 .tab-panel {
-    display: none;
     height: 100%;
+    display: none;
 }
+
 .tab-panel.active {
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
 }
 .craft-body {
     flex-grow: 1;

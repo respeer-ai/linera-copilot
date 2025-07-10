@@ -1,138 +1,69 @@
+// 主视图 - 负责 Tab 切换功能，初始化 Craft 视图和 Settings 视图
+import { initCraftView } from './craft/craftView.js';
+import { initSettingsView } from './settings/settingsView.js';
+
+// 只调用一次 acquireVsCodeApi()
 const vscode = acquireVsCodeApi();
 
-document.addEventListener('DOMContentLoaded', function() {
-    // 获取UI元素
-    const messageInput = document.querySelector('.message-input');
-    const sendButton = document.querySelector('.send-button');
-    const messageList = document.querySelector('.message-list');
-    const craftBody = document.querySelector('.craft-body');
-    const messageListContainer = document.querySelector('.message-list-container');
-    
-    // Tab switching functionality
-    const tabItems = document.querySelectorAll('.tab-item');
-    const tabPanels = document.querySelectorAll('.tab-panel');
-    
-    console.log('Tab items:', tabItems.length);
-    console.log('Tab panels:', tabPanels.length);
-    
-    if (tabItems.length > 0 && tabPanels.length > 0) {
-        tabItems.forEach(tab => {
-            tab.addEventListener('click', () => {
-                console.log('Tab clicked:', tab.getAttribute('data-tab'));
-                
-                // Remove active class from all tabs and panels
-                tabItems.forEach(item => item.classList.remove('active'));
-                tabPanels.forEach(panel => panel.classList.remove('active'));
-                
-                // Add active class to clicked tab
-                tab.classList.add('active');
-                
-                // Get the target panel id from the tab's data-tab attribute
-                const targetId = tab.getAttribute('data-tab');
-                if (targetId) {
-                    // Add active class to the corresponding panel
-                    const targetPanel = document.getElementById(targetId);
-                    if (targetPanel) {
-                        targetPanel.classList.add('active');
-                        console.log('Activated panel:', targetId);
-                    } else {
-                        console.error('Panel not found:', targetId);
-                    }
-                }
-            });
-        });
-    } else {
-        console.error('Tab items or panels not found');
-    }
-
-    // Handle card clicks
-    const cards = document.querySelectorAll('.card');
-    if (cards.length > 0) {
-        cards.forEach(card => {
-            card.addEventListener('click', () => {
-                const action = card.dataset.action;
-                if (action) {
-                    vscode.postMessage({ command: 'craft-action', action: action });
-                    if (craftBody) craftBody.style.display = 'none';
-                    if (messageListContainer) messageListContainer.style.display = 'flex';
-                    // 确保message-input的高度在128px到200px之间
-                    if (messageInput) {
-                        adjustMessageInputHeight(messageInput);
-                    }
-                }
-            });
-        });
-    }
-
-    // Handle message sending if the elements exist
-    if (sendButton && messageInput && messageList) {
-        sendButton.addEventListener('click', () => {
-            const message = messageInput.value;
-            if (message) {
-                vscode.postMessage({ command: 'send-message', text: message });
-                messageInput.value = '';
-                addMessage('user', message);
-                adjustMessageInputHeight(messageInput);
-                sendButton.disabled = true;
-            }
-        });
-
-        messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendButton.click();
-            }
-        });
-
-        /**
-         * 调整消息输入框的高度
-         * @param {HTMLTextAreaElement} input - 消息输入框元素
-         */
-        function adjustMessageInputHeight(input) {
-            // 限制最小高度为128px，最大高度为200px
-            const newHeight = Math.min(Math.max(input.scrollHeight, 128), 200);
-            input.style.height = newHeight + 'px';
-        }
-
-        // Auto-resize textarea and manage send button state
-        messageInput.addEventListener('input', () => {
-            adjustMessageInputHeight(messageInput);
-            sendButton.disabled = messageInput.value.trim() === '';
-        });
-
-        // Initial state of the send button
-        sendButton.disabled = true;
-    }
-
-    // Handle messages from the extension
-    window.addEventListener('message', event => {
-        const message = event.data;
-        switch (message.command) {
-            case 'add-message':
-                if (typeof addMessage === 'function') {
-                    addMessage(message.type, message.text);
-                }
-                break;
-            case 'setPrompt':
-                if (messageInput && message.prompt) {
-                    messageInput.value = message.prompt;
-                    adjustMessageInputHeight(messageInput);
-                    sendButton.disabled = false;
-                    // Focus on the input field
-                    messageInput.focus();
-                }
-                break;
-        }
-    });
-
-    // Define addMessage function only if messageList exists
-    function addMessage(type, text) {
-        if (!messageList) return;
+// 主视图类
+class MainView {
+    constructor() {
+        this.tabItems = document.querySelectorAll('.tab-item');
+        this.tabPanels = document.querySelectorAll('.tab-panel');
         
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', type);
-        messageElement.textContent = text;
-        messageList.appendChild(messageElement);
-        messageList.scrollTop = messageList.scrollHeight;
+        this.initEventListeners();
+        this.initViews();
     }
+
+    // 初始化事件监听器
+    initEventListeners() {
+        // Tab 切换功能
+        this.tabItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const tabId = item.getAttribute('data-tab');
+                this.activateTab(tabId);
+            });
+        });
+    }
+
+    // 初始化其他视图
+    initViews() {
+        // 初始化 Craft 视图，传递 vscode 对象
+        this.craftView = initCraftView(vscode);
+        
+        // 初始化 Settings 视图，传递 vscode 对象
+        this.settingsView = initSettingsView(vscode);
+    }
+
+    // 激活指定的 Tab
+    activateTab(tabId) {
+        try {
+            // 更新 Tab 项的激活状态
+            this.tabItems.forEach(item => {
+                if (item.getAttribute('data-tab') === tabId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // 更新 Tab 面板的显示状态
+            this.tabPanels.forEach(panel => {
+                if (panel.id === tabId + '-panel') {
+                    panel.classList.add('active');
+                    panel.classList.remove('hidden');
+                } else {
+                    panel.classList.remove('active');
+                    panel.classList.add('hidden');
+                }
+            });
+        } catch (error) {
+            console.error('Tab activation error:', error);
+        }
+    }
+}
+
+// 初始化主视图
+document.addEventListener('DOMContentLoaded', () => {
+    const mainView = new MainView();
 });

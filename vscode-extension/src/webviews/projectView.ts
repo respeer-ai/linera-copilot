@@ -1,6 +1,15 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+
+function getNonce() {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
 import { setupMessageListener } from './messageDispatcher';
 
 export class LineraPanelViewProvider implements vscode.WebviewViewProvider {
@@ -27,44 +36,66 @@ export class LineraPanelViewProvider implements vscode.WebviewViewProvider {
             ]
         };
 
+        // 设置 Content Security Policy 允许加载外部资源
+        const cspSource = webviewView.webview.cspSource;
+        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview, cspSource);
+
         // 设置消息监听器
         setupMessageListener(webviewView);
-
-        // 设置webview的HTML内容
-        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
     }
 
-    private _getHtmlForWebview(webview: vscode.Webview) {
+    private _getHtmlForWebview(webview: vscode.Webview, cspSource: string) {
+        // Generate random nonce
+        const nonce = getNonce();
+        
         // Get path to main webview HTML
         const htmlPath = path.join(this._extensionUri.fsPath, 'src', 'webview.html');
         let html = fs.readFileSync(htmlPath, 'utf8');
 
-        // Get path to craft page HTML
-        const craftPagePath = path.join(this._extensionUri.fsPath, 'src', 'craft', 'page.html');
-        const craftPageHtml = fs.readFileSync(craftPagePath, 'utf8');
+        // Generate resource URIs
+        const getWebviewUri = (...pathSegments: string[]) => {
+            return webview.asWebviewUri(
+                vscode.Uri.joinPath(this._extensionUri, ...pathSegments)
+            ).toString();
+        };
 
-        // Inject craft page content
-        html = html.replace('<!-- CRAFT_CONTENT_PLACEHOLDER -->', craftPageHtml);
+        const codiconUri = getWebviewUri('node_modules', '@vscode', 'codicons', 'dist', 'codicon.css');
+        const cssUri = getWebviewUri('src', 'webview.css');
+        const jsUri = getWebviewUri('src', 'webview.js');
 
-        // Get path to settings page HTML
-        const settingsPagePath = path.join(this._extensionUri.fsPath, 'src', 'settings', 'page.html');
-        const settingsPageHtml = fs.readFileSync(settingsPagePath, 'utf8');
+        // Strict Content Security Policy
+        const csp = [
+            "default-src 'none'",
+            `img-src ${webview.cspSource} https:`,
+            `script-src 'nonce-${nonce}'`,
+            `style-src 'nonce-${nonce}' ${webview.cspSource}`,
+            `font-src ${webview.cspSource}`
+        ].join('; ');
 
-        // Inject settings page content
-        html = html.replace('<!-- SETTINGS_CONTENT_PLACEHOLDER -->', settingsPageHtml);
+        // Replace resource paths and add CSP
+        html = html
+            .replace('<head>', `<head>\n<meta http-equiv="Content-Security-Policy" content="${csp}">`)
+            .replace('https://cdn.jsdelivr.net/npm/@vscode/codicons/dist/codicon.css', codiconUri)
+            .replace('href="webview.css"', `href="${cssUri}" nonce="${nonce}"`)
+            .replace('src="webview.js"', `src="${jsUri}" nonce="${nonce}"`)
+            .replace(/%7B%codiconUri%%7D/g, codiconUri)
+            .replace(/%7B%cssUri%%7D/g, cssUri);
 
-        // Convert the CSS file path to a URI that the webview can use
-        const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'webview.css'));
-        html = html.replace(
-            /<link rel="stylesheet" href="webview.css">/,
-            `<link rel="stylesheet" href="${cssUri}">`
+        // Inject page content
+        const injectPageContent = (placeholder: string, pagePath: string) => {
+            const fullPath = path.join(this._extensionUri.fsPath, ...pagePath.split('/'));
+            const pageHtml = fs.readFileSync(fullPath, 'utf8');
+            return html.replace(placeholder, pageHtml);
+        };
+
+        html = injectPageContent(
+            '<!-- CRAFT_CONTENT_PLACEHOLDER -->',
+            'src/craft/page.html'
         );
-
-        // Convert the JavaScript file path to a URI that the webview can use
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'webview.js'));
-        html = html.replace(
-            /<script src="webview.js"><\/script>/,
-            `<script src="${scriptUri}"></script>`
+        
+        html = injectPageContent(
+            '<!-- SETTINGS_CONTENT_PLACEHOLDER -->',
+            'src/settings/page.html'
         );
 
         return html;

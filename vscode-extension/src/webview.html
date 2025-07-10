@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Linera Panel</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons/dist/codicon.css">
-    <link rel="stylesheet" href="webview.css">
+    <link nonce="{%nonce%}" rel="stylesheet" href="{%codiconUri%}">
+    <link nonce="{%nonce%}" rel="stylesheet" href="{%cssUri%}">
 </head>
 <body>
     <div class="tab-bar">
@@ -51,6 +51,6 @@
         </div>
     </div>
 
-    <script src="webview.js"></script>
+    <script type="module" src="webview.js"></script>
 </body>
 </html>
