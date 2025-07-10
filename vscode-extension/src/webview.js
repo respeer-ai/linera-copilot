@@ -55,6 +55,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     vscode.postMessage({ command: 'craft-action', action: action });
                     if (craftBody) craftBody.style.display = 'none';
                     if (messageListContainer) messageListContainer.style.display = 'flex';
+                    // 确保message-input的高度在128px到200px之间
+                    if (messageInput) {
+                        adjustMessageInputHeight(messageInput);
+                    }
                 }
             });
         });
@@ -68,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 vscode.postMessage({ command: 'send-message', text: message });
                 messageInput.value = '';
                 addMessage('user', message);
-                messageInput.style.height = 'auto';
+                adjustMessageInputHeight(messageInput);
                 sendButton.disabled = true;
             }
         });
@@ -80,10 +84,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        /**
+         * 调整消息输入框的高度
+         * @param {HTMLTextAreaElement} input - 消息输入框元素
+         */
+        function adjustMessageInputHeight(input) {
+            // 限制最小高度为128px，最大高度为200px
+            const newHeight = Math.min(Math.max(input.scrollHeight, 128), 200);
+            input.style.height = newHeight + 'px';
+        }
+
         // Auto-resize textarea and manage send button state
         messageInput.addEventListener('input', () => {
-            messageInput.style.height = 'auto';
-            messageInput.style.height = (messageInput.scrollHeight) + 'px';
+            adjustMessageInputHeight(messageInput);
             sendButton.disabled = messageInput.value.trim() === '';
         });
 
@@ -103,8 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'setPrompt':
                 if (messageInput && message.prompt) {
                     messageInput.value = message.prompt;
-                    messageInput.style.height = 'auto';
-                    messageInput.style.height = (messageInput.scrollHeight) + 'px';
+                    adjustMessageInputHeight(messageInput);
                     sendButton.disabled = false;
                     // Focus on the input field
                     messageInput.focus();

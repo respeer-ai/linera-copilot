@@ -180,6 +180,7 @@ body, html {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    max-height: calc(100% - 150px); /* 限制最大高度，确保craft-footer不被挤压 */
 }
 .message.user {
     background-color: var(--vscode-button-background);
