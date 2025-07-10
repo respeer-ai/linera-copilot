@@ -34,9 +34,20 @@ export class CraftView {
             action: action
         });
         
-        // 隐藏 Craft 页面，显示消息输入区域
+        // 设置提示文本
+        let promptText = '';
+        switch (action) {
+            case 'create-2048-game':
+                promptText = 'I want to create a 2048 game. Please break this task down into smaller steps.';
+                break;
+            default:
+                promptText = 'I want to complete this task. Please help me break it down.';
+        }
+        
+        // 隐藏 Craft 页面，显示消息输入区域并设置提示
         this.craftPanel.style.display = 'none';
         this.messageInput.show();
+        this.messageInput.setPrompt(promptText);
     }
 }
 
