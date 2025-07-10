@@ -166,13 +166,22 @@ body, html {
 }
 .send-button {
     position: absolute;
-    right: 20px;
-    bottom: 20px;
-    background: none;
+    right: 15px;
+    bottom: 15px;
+    width: 32px;
+    height: 32px;
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
     border: none;
-    color: var(--vscode-icon-foreground);
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 20px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.send-button:hover {
+    background-color: var(--vscode-button-hoverBackground);
 }
 .send-button:disabled {
     color: var(--vscode-disabledForeground);
