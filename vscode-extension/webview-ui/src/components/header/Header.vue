@@ -1,15 +1,17 @@
 <template>
   <q-header elevated class="bg-transparent text-white">
     <q-toolbar>
-      <div class="q-gutter-sm row items-center">
-        <q-tabs v-model="selectedTab" inline-label dense narrow-indicator align="left">
-          <q-tab name="craft" label="Craft" style="margin-right: 16px;" />
-          <q-tab name="chat" label="Chat" style="margin-right: 16px;" />
-          <q-tab name="code-review" label="Code Review" style="margin-right: 16px;" />
-          <q-tab name="unit-test" label="Unit Test" style="margin-right: 16px;" />
-          <q-tab name="module-test" label="Module Test" style="margin-right: 16px;" />
-          <q-tab name="settings" label="Settings" style="margin-right: 16px;" />
+      <div class="q-gutter-sm row items-center full-width">
+        <q-tabs v-model="selectedTab" inline-label dense narrow-indicator>
+          <q-tab name="craft" label="Craft" no-caps style="margin-right: 16px;" />
+          <q-tab name="chat" label="Chat" no-caps style="margin-right: 16px;" />
+          <q-tab name="code-review" label="Code Review" no-caps style="margin-right: 16px;" />
+          <q-tab name="unit-test" label="Unit Test" no-caps style="margin-right: 16px;" />
+          <q-tab name="module-test" label="Module Test" no-caps style="margin-right: 16px;" />
+          <q-tab name="settings" label="Settings" no-caps style="margin-right: 16px;" />
         </q-tabs>
+
+        <q-space />
 
         <q-select
           v-model="sdkVersion"
@@ -18,6 +20,8 @@
           options-dense
           style="min-width: 100px"
           @update:model-value="persistSdkVersion"
+          label='SDK Version'
+          dark
         />
 
         <q-btn dense flat icon="add" />
@@ -53,3 +57,19 @@ watchEffect(() => {
 })
 
 </script>
+
+<style scoped>
+.q-tab {
+  padding: 0 !important;
+  min-height: 24px !important;
+  font-size: 14px;
+}
+
+.q-tab__label {
+  font-size: 10px;
+}
+
+.q-toolbar {
+  min-height: 24px !important;
+}
+</style>
