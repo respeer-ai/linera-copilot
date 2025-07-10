@@ -16,19 +16,18 @@ class LineraCopilotViewProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [vscode.Uri.file(path.join(this._extensionContext.extensionPath, 'webview-ui/dist'))]
         };
 
-        const isDevelopment = this._extensionContext.extensionMode === vscode.ExtensionMode.Development;
+        const manifest = require(path.join(this._extensionContext.extensionPath, 'webview-ui/dist/.vite/manifest.json'));
+        const mainScript = manifest['index.html']['file'];
+        const cssFiles = manifest['index.html']['css'] || [];
 
-        if (isDevelopment) {
-            webviewView.webview.html = this.getWebviewContent('http://localhost:5173/src/main.ts');
-        } else {
-            const manifest = require(path.join(this._extensionContext.extensionPath, 'webview-ui/dist/.vite/manifest.json'));
-            const mainScript = manifest['src/main.ts']['file'];
-            const mainScriptUri = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionContext.extensionUri, 'webview-ui', 'dist', mainScript));
-            webviewView.webview.html = this.getWebviewContent(mainScriptUri.toString());
-        }
+        const scriptUri = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionContext.extensionUri, 'webview-ui', 'dist', mainScript));
+        const cssUris = cssFiles.map((file: string) => webviewView.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionContext.extensionUri, 'webview-ui', 'dist', file)));
+
+        webviewView.webview.html = this.getWebviewContent(scriptUri.toString(), cssUris.map((uri: vscode.Uri) => uri.toString()));
     }
 
-    private getWebviewContent(scriptUri: string): string {
+    private getWebviewContent(scriptUri: string, cssUris: string[]): string {
+        const cssLinks = cssUris.map(uri => `<link rel="stylesheet" href="${uri}">`).join('\n');
         return `
             <!DOCTYPE html>
             <html lang="en">
@@ -36,6 +35,7 @@ class LineraCopilotViewProvider implements vscode.WebviewViewProvider {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Linera Copilot</title>
+                ${cssLinks}
             </head>
             <body>
                 <div id="app"></div>
