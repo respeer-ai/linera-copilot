@@ -114,6 +114,39 @@ class LineraPanelViewProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.onDidReceiveMessage(async message => {
             switch (message.command) {
+                case 'craft-action':
+                    {
+                        // Handle craft actions
+                        switch (message.action) {
+                            case 'create-2048-game':
+                                webviewView.webview.postMessage({ 
+                                    command: 'setPrompt', 
+                                    prompt: 'Create a 2048 game using Linera microchain technology.' 
+                                });
+                                break;
+                            case 'create-counter-program':
+                                webviewView.webview.postMessage({ 
+                                    command: 'setPrompt', 
+                                    prompt: 'Create a counter program using Linera microchain technology.' 
+                                });
+                                break;
+                            case 'explain-project':
+                                webviewView.webview.postMessage({ 
+                                    command: 'setPrompt', 
+                                    prompt: 'Explain how Linera microchain technology works and its benefits.' 
+                                });
+                                break;
+                            case 'execute-project':
+                                webviewView.webview.postMessage({ 
+                                    command: 'setPrompt', 
+                                    prompt: 'How do I execute and deploy a Linera microchain project?' 
+                                });
+                                break;
+                            default:
+                                console.log(`Unknown craft action: ${message.action}`);
+                        }
+                    }
+                    break;
                 case 'getSettings':
                     {
                         const config = vscode.workspace.getConfiguration('linera');
@@ -222,16 +255,12 @@ class LineraPanelViewProvider implements vscode.WebviewViewProvider {
             `<link rel="stylesheet" href="${cssUri}">`
         );
 
-        // Since we've embedded the JavaScript code directly in the HTML file,
-        // we no longer need to replace the script tag.
-        // If we want to use external script files in the future, we can uncomment the following code:
-        /*
+        // Convert the JavaScript file path to a URI that the webview can use
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'webview.js'));
         html = html.replace(
-            /<script src=".\/webview.js">\s*<\/script>/,
+            /<script src="webview.js"><\/script>/,
             `<script src="${scriptUri}"></script>`
         );
-        */
 
         return html;
     }

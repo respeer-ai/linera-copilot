@@ -82,14 +82,47 @@ body, html {
 }
 .card {
     background-color: var(--vscode-button-secondaryBackground);
-    padding: 15px;
-    border-radius: 5px;
+    padding: 20px 15px;
+    border-radius: 8px;
     cursor: pointer;
     text-align: center;
-    transition: background-color 0.2s;
+    transition: all 0.3s ease;
+    border: 1px solid var(--vscode-editor-widget-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
 }
 .card:hover {
     background-color: var(--vscode-button-secondaryHoverBackground);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+.card:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--vscode-activityBarBadge-background), var(--vscode-editor-foreground));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.card:hover::before {
+    opacity: 1;
+}
+.card-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: var(--vscode-activityBarBadge-background);
 }
 .craft-footer {
     position: relative;
