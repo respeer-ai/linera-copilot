@@ -2,9 +2,7 @@
   <q-layout view="hHh lpR fFf">
     <q-header elevated>
       <q-toolbar>
-        <q-toolbar-title>
-          Linera Copilot
-        </q-toolbar-title>
+        <Header />
       </q-toolbar>
     </q-header>
 
@@ -15,6 +13,8 @@
     </q-page-container>
   </q-layout>
 </template>
-
 <script setup lang="ts">
+
+import Header from './components/header/Header.vue'
+
 </script>
