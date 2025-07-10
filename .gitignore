@@ -18,3 +18,7 @@ ehthumbs.db
 Thumbs.db
 
 **/out/*
+
+**/dist/*
+npm-debug.log*
+*.vsix

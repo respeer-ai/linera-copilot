@@ -1,89 +1,63 @@
 {
-    "name": "linera-extension",
-    "displayName": "Linera Extension",
-    "description": "A VS Code extension to help create Linera applications.",
-    "version": "0.0.1",
-    "engines": {
-        "vscode": "^1.85.0"
-    },
-    "categories": [
-        "Other"
+  "name": "linera-copilot",
+  "displayName": "linera-copilot",
+  "description": "Linera Copilot",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:linera-copilot.showWebview"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "linera-copilot.showWebview",
+        "title": "Show Linera Copilot"
+      }
     ],
-    "activationEvents": [
-        "onCommand:linera-extension.createProject"
-    ],
-    "main": "./out/extension.js",
-    "contributes": {
-        "configuration": {
-            "title": "Linera",
-            "properties": {
-                "linera.modelUrl": {
-                    "type": "string",
-                    "default": "",
-                    "description": "The URL of the AI model."
-                },
-                "linera.apiToken": {
-                    "type": "string",
-                    "default": "",
-                    "description": "The API token for the AI model."
-                },
-                "linera.projectsRoot": {
-                    "type": "string",
-                    "default": "",
-                    "description": "The root directory for new Linera projects."
-                },
-                "linera.modelName": {
-                    "type": "string",
-                    "default": "",
-                    "description": "The name of the AI model to use."
-                }
-            }
-        },
-        "commands": [
-            {
-                "command": "linera-extension.createProject",
-                "title": "Create Project"
-            }
-        ],
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "linera-activitybar",
-                    "title": "Linera",
-                    "icon": "$(symbol-class)"
-                }
-            ]
-        },
-        "views": {
-            "linera-activitybar": [
-                {
-                    "id": "linera.projectExplorer",
-                    "name": "Project Explorer",
-                    "type": "webview",
-                    "when": "true"
-                }
-            ]
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "linera-copilot-sidebar",
+          "title": "Linera Copilot",
+          "icon": "media/icon.svg"
         }
+      ]
     },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
-        "pretest": "npm run compile && npm run lint",
-        "lint": "eslint src --ext ts",
-        "test": "vscode-test"
-    },
-    "devDependencies": {
-        "@types/vscode": "^1.85.0",
-        "@types/mocha": "^10.0.6",
-        "@types/node": "18.x",
-        "@typescript-eslint/eslint-plugin": "^6.19.1",
-        "@typescript-eslint/parser": "^6.19.1",
-        "eslint": "^8.56.0",
-        "typescript": "^5.3.3",
-        "@vscode/test-cli": "^0.0.4",
-        "@vscode/test-electron": "^2.3.9",
-        "axios": "^1.6.0",
-        "@vscode/codicons": "^0.0.35"
+    "views": {
+      "linera-copilot-sidebar": [
+        {
+          "id": "linera-copilot-webview",
+          "name": "Linera Copilot",
+          "type": "webview"
+        }
+      ]
     }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile-extension && npm run compile-webview",
+    "compile-extension": "tsc -p ./",
+    "watch-extension": "tsc -watch -p ./",
+    "compile-webview": "cd webview-ui && npm install && npm run build",
+    "watch-webview": "cd webview-ui && npm run dev",
+    "pretest": "npm run compile-extension && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.8"
+  }
 }
