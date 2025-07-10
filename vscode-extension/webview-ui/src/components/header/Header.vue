@@ -2,7 +2,7 @@
   <q-header elevated class="bg-transparent text-white">
     <q-toolbar>
       <div class="q-gutter-sm row items-center">
-        <q-tabs v-model="selectedTab" inline-label dense align="left">
+        <q-tabs v-model="selectedTab" inline-label dense narrow-indicator align="left">
           <q-tab name="craft" label="Craft" style="margin-right: 16px;" />
           <q-tab name="chat" label="Chat" style="margin-right: 16px;" />
           <q-tab name="code-review" label="Code Review" style="margin-right: 16px;" />
