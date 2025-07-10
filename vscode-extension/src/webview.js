@@ -10,9 +10,11 @@ class MainView {
     constructor() {
         this.tabItems = document.querySelectorAll('.tab-item');
         this.tabPanels = document.querySelectorAll('.tab-panel');
-        
+        this.initializedTabs = new Set(); // Track initialized tabs
+
         this.initEventListeners();
-        this.initViews();
+        // Activate the default tab on load
+        this.activateTab('craft', true);
     }
 
     // 初始化事件监听器
@@ -26,39 +28,39 @@ class MainView {
         });
     }
 
-    // 初始化其他视图
-    initViews() {
-        // 初始化 Craft 视图，传递 vscode 对象
-        this.craftView = initCraftView(vscode);
+    // 初始化视图
+    initView(tabId) {
+        if (this.initializedTabs.has(tabId)) {
+            return; // Already initialized
+        }
+
+        if (tabId === 'craft') {
+            initCraftView(vscode);
+        } else if (tabId === 'settings') {
+            initSettingsView(vscode);
+        }
         
-        // 初始化 Settings 视图，传递 vscode 对象
-        this.settingsView = initSettingsView(vscode);
+        this.initializedTabs.add(tabId);
     }
 
     // 激活指定的 Tab
-    activateTab(tabId) {
+    activateTab(tabId, isInitial = false) {
         try {
+            if (!isInitial) {
+                this.initView(tabId);
+            }
+
             // 更新 Tab 项的激活状态
             this.tabItems.forEach(item => {
-                if (item.getAttribute('data-tab') === tabId) {
-                    item.classList.add('active');
-                } else {
-                    item.classList.remove('active');
-                }
+                item.classList.toggle('active', item.getAttribute('data-tab') === tabId);
             });
 
             // 更新 Tab 面板的显示状态
             this.tabPanels.forEach(panel => {
-                if (panel.id === tabId + '-panel') {
-                    panel.classList.add('active');
-                    panel.classList.remove('hidden');
-                } else {
-                    panel.classList.remove('active');
-                    panel.classList.add('hidden');
-                }
+                panel.classList.toggle('active', panel.id === tabId);
             });
         } catch (error) {
-            console.error('Tab activation error:', error);
+            console.error(`Tab activation error for tab "${tabId}":`, error);
         }
     }
 }
@@ -66,4 +68,6 @@ class MainView {
 // 初始化主视图
 document.addEventListener('DOMContentLoaded', () => {
     const mainView = new MainView();
+    // Initialize the default view right away
+    mainView.initView('craft');
 });

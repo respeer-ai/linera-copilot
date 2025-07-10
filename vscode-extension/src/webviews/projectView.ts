@@ -68,7 +68,7 @@ export class LineraPanelViewProvider implements vscode.WebviewViewProvider {
             "default-src 'none'",
             `img-src ${webview.cspSource} https:`,
             `script-src 'nonce-${nonce}'`,
-            `style-src ${webview.cspSource}`,
+            `style-src ${webview.cspSource} 'unsafe-inline'`,
             `font-src ${webview.cspSource}`
         ].join('; ');
 
