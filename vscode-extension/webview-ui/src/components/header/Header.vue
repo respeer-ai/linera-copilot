@@ -2,13 +2,13 @@
   <q-header elevated class="bg-transparent text-white">
     <q-toolbar>
       <div class="q-gutter-sm row items-center">
-        <q-tabs v-model="selectedTab" inline-label>
-          <q-tab name="craft" label="Craft" />
-          <q-tab name="chat" label="Chat" />
-          <q-tab name="code-review" label="Code Review" />
-          <q-tab name="unit-test" label="Unit Test" />
-          <q-tab name="module-test" label="Module Test" />
-          <q-tab name="settings" label="Settings" />
+        <q-tabs v-model="selectedTab" inline-label dense align="left">
+          <q-tab name="craft" label="Craft" style="margin-right: 16px;" />
+          <q-tab name="chat" label="Chat" style="margin-right: 16px;" />
+          <q-tab name="code-review" label="Code Review" style="margin-right: 16px;" />
+          <q-tab name="unit-test" label="Unit Test" style="margin-right: 16px;" />
+          <q-tab name="module-test" label="Module Test" style="margin-right: 16px;" />
+          <q-tab name="settings" label="Settings" style="margin-right: 16px;" />
         </q-tabs>
 
         <q-select
