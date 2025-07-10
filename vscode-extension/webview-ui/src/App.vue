@@ -1,10 +1,6 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header elevated>
-      <q-toolbar>
-        <Header />
-      </q-toolbar>
-    </q-header>
+    <Header />
 
     <q-page-container>
       <q-page padding>

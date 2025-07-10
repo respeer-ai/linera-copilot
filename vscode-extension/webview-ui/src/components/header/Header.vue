@@ -1,5 +1,5 @@
 <template>
-  <q-header elevated class="bg-transparent text-primary">
+  <q-header elevated class="bg-transparent text-white">
     <q-toolbar>
       <div class="q-gutter-sm row items-center">
         <q-tabs v-model="selectedTab" inline-label>
@@ -20,8 +20,8 @@
           @update:model-value="persistSdkVersion"
         />
 
-        <q-btn dense flat icon="add" label="New Session" />
-        <q-btn dense flat icon="add_circle" label="New Project" />
+        <q-btn dense flat icon="add" />
+        <q-btn dense flat icon="add_circle" />
       </div>
     </q-toolbar>
   </q-header>
