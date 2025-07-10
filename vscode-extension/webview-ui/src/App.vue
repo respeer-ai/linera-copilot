@@ -4,7 +4,7 @@
 
     <q-page-container>
       <q-page padding>
-        <p>Hello from Quasar!</p>
+        <Panels />
       </q-page>
     </q-page-container>
   </q-layout>
@@ -12,5 +12,6 @@
 <script setup lang="ts">
 
 import Header from './components/header/Header.vue'
+import Panels from './components/panel/Panels.vue'
 
 </script>
