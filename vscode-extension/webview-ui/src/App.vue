@@ -3,7 +3,7 @@
     <Header />
 
     <q-page-container>
-      <q-page padding>
+      <q-page>
         <Panels />
       </q-page>
     </q-page-container>

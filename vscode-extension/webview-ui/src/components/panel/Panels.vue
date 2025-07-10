@@ -1,5 +1,5 @@
 <template>
-  <q-tab-panels :dark='false' v-model="selectedTab">
+  <q-tab-panels :dark='true' v-model="selectedTab">
     <q-tab-panel name="craft">
       <CraftPanel />
     </q-tab-panel>
