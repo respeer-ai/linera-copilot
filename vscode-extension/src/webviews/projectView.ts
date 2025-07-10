@@ -68,18 +68,17 @@ export class LineraPanelViewProvider implements vscode.WebviewViewProvider {
             "default-src 'none'",
             `img-src ${webview.cspSource} https:`,
             `script-src 'nonce-${nonce}'`,
-            `style-src 'nonce-${nonce}' ${webview.cspSource}`,
+            `style-src ${webview.cspSource} 'unsafe-inline'`,
             `font-src ${webview.cspSource}`
         ].join('; ');
 
         // Replace resource paths and add CSP
         html = html
             .replace('<head>', `<head>\n<meta http-equiv="Content-Security-Policy" content="${csp}">`)
-            .replace('https://cdn.jsdelivr.net/npm/@vscode/codicons/dist/codicon.css', codiconUri)
-            .replace('href="webview.css"', `href="${cssUri}" nonce="${nonce}"`)
-            .replace('src="webview.js"', `src="${jsUri}" nonce="${nonce}"`)
-            .replace(/%7B%codiconUri%%7D/g, codiconUri)
-            .replace(/%7B%cssUri%%7D/g, cssUri);
+            .replace(/\{%nonce%\}/g, nonce)
+            .replace(/\{%codiconUri%\}/g, codiconUri)
+            .replace(/\{%cssUri%\}/g, cssUri)
+            .replace(/\{%jsUri%\}/g, jsUri);
 
         // Inject page content
         const injectPageContent = (placeholder: string, pagePath: string) => {
