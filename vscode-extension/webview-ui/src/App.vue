@@ -1,13 +1,10 @@
 <template>
-  <q-layout view="hHh lpR fFf">
+  <div style='height: 100vh;'>
     <Header />
-
-    <q-page-container>
-      <q-page>
-        <Panels />
-      </q-page>
-    </q-page-container>
-  </q-layout>
+    <div style='height: calc(100vh - 48px);'>
+      <Panels />
+    </div>
+  </div>
 </template>
 <script setup lang="ts">
 

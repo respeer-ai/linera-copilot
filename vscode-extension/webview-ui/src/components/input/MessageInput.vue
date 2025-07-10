@@ -25,6 +25,7 @@ const sendMessage = () => {
 .message-input {
   padding-right: 40px;
   /* Make space for the button */
+  border-radius: 8px;
 }
 
 .send-button {

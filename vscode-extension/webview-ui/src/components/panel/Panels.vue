@@ -36,3 +36,13 @@ import CraftPanel from './CraftPanel.vue';
 const settingsStore = useSettingsStore();
 const selectedTab = computed(() => settingsStore.selectedTab);
 </script>
+
+<style scoped>
+.q-tab-panel {
+  padding: 0 !important; /* 添加内边距 */
+}
+
+.q-tab-panels {
+  background: none !important; /* 去除背景 */
+}
+</style>

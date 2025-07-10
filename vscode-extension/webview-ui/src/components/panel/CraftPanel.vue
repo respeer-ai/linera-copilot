@@ -1,21 +1,23 @@
 <template>
-  <q-page class="flex flex-center column">
-    <div class="text-h4 text-weight-bold q-my-md text-center">
+  <div class="flex justify-center align-center flex-column full-height">
+    <div class="text-h6 q-my-md text-center q-mt-lg" style="margin-top: 48px;">
       Create Reactive & Realtime dApps with Linera Microchain
     </div>
 
-    <div class="row q-col-gutter-md justify-center q-mt-md flex-1">
-      <div class="col-12 col-sm-6 col-md-3" v-for="(card, index) in cards" :key="index">
-        <q-card flat class="q-pa-md text-center">
-          <q-icon :name="card.icon" size="4rem" class="q-mb-md" />
-          <div class="text-h6 text-weight-medium q-mb-sm">{{ card.title }}</div>
+    <div class="row justify-center q-mt-md flex-1">
+      <div class="full-width" v-for="(card, index) in cards" :key="index">
+        <q-card flat class="q-pa-md cursor-pointer full-width bg-transparent row q-mt-sm items-center">
+          <q-icon :name="card.icon" size="1.2rem" class="q-mr-md" />
+          <div class="text-normal text-weight-medium q-mr-sm">{{ card.title }}</div>
           <div class="text-caption text-grey">{{ card.subtitle }}</div>
         </q-card>
       </div>
     </div>
 
-    <MessageInput class="fixed-bottom" />
-  </q-page>
+    <div class="q-my-sm q-mx-md fixed-bottom q-pa-sm">
+      <MessageInput />
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -46,3 +48,15 @@ const cards = ref([
   }
 ]);
 </script>
+
+<style scoped>
+.q-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.q-card:hover {
+  border: 1px solid #555;
+}
+</style>
