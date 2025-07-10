@@ -9,6 +9,11 @@ export class MessageInput {
         this.messageList = document.getElementById('message-list');
         this.messageInputContainer = document.getElementById('message-input-container');
         
+        if (!this.messageInput || !this.sendButton || !this.messageList || !this.messageInputContainer) {
+            console.error('Missing required DOM elements in MessageInput');
+            return;
+        }
+        
         this.initEventListeners();
     }
 
@@ -35,13 +40,36 @@ export class MessageInput {
         // 监听来自 VSCode 的消息
         window.addEventListener('message', (event) => {
             const message = event.data;
+            
+            console.log('[messageInput] Received message:', message);
+            
+            if (!message || typeof message !== 'object') {
+                console.error('[messageInput] Invalid message format:', message);
+                return;
+            }
+
             switch (message.command) {
                 case 'add-message':
-                    this.addMessage(message.text, message.sender);
+                    if (message.text && message.sender) {
+                        console.log('[messageInput] Processing add-message:', message.text);
+                        this.addMessage(message.text, message.sender);
+                    } else {
+                        console.error('[messageInput] Missing required fields for add-message:', message);
+                    }
                     break;
+                    
                 case 'setPrompt':
-                    this.setPrompt(message.text);
+                    const promptText = message.prompt || message.text;
+                    if (promptText) {
+                        console.log('[messageInput] Processing setPrompt:', promptText);
+                        this.setPrompt(promptText);
+                    } else {
+                        console.error('[messageInput] Missing prompt/text field for setPrompt:', message);
+                    }
                     break;
+                    
+                default:
+                    console.warn('[messageInput] Unknown message command:', message.command);
             }
         });
     }
@@ -86,6 +114,11 @@ export class MessageInput {
 
     // 设置提示文本
     setPrompt(text) {
+        if (!this.messageInput) {
+            console.error('[messageInput] Cannot set prompt - message input element not found');
+            return;
+        }
+        
         this.messageInput.value = text;
         this.adjustTextareaHeight();
         this.messageInput.focus();
