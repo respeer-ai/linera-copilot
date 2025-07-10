@@ -13,7 +13,10 @@ class LineraCopilotViewProvider implements vscode.WebviewViewProvider {
     ) {
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [vscode.Uri.file(path.join(this._extensionContext.extensionPath, 'webview-ui/dist'))]
+            localResourceRoots: [
+                vscode.Uri.joinPath(this._extensionContext.extensionUri, 'webview-ui', 'dist'),
+                vscode.Uri.joinPath(this._extensionContext.extensionUri, 'webview-ui', 'dist', 'assets')
+            ]
         };
 
         const manifest = require(path.join(this._extensionContext.extensionPath, 'webview-ui/dist/.vite/manifest.json'));

@@ -4,6 +4,7 @@ import { Quasar } from 'quasar'
 import { createPinia } from 'pinia'
 import '@quasar/extras/material-icons/material-icons.css'
 import 'quasar/dist/quasar.css'
+import quasarIconSet from 'quasar/icon-set/material-icons'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -11,6 +12,7 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(Quasar, {
   plugins: {},
+  iconSet: quasarIconSet,
 })
 
 app.mount('#app')
