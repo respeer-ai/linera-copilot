@@ -35,8 +35,8 @@ import { PluginSettings } from '../../settings'
 const settingsStore = useSettingsStore()
 
 const selectedTab = ref('chat')
-const sdkVersion = ref(PluginSettings.getSdkVersion() || 'v1.0.0')
-const sdkVersions = ['v1.0.0', 'v1.1.0', 'v2.0.0']
+const sdkVersion = ref(PluginSettings.getSdkVersion() || 'v0.14.1')
+const sdkVersions = ['v0.14.1', 'vv0.15.0']
 
 // Persist SDK version to localStorage
 const persistSdkVersion = (version: string) => {
