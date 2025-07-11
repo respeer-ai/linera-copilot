@@ -1,5 +1,5 @@
 <template>
-  <q-list ref="messageListRef" class="message-list">
+  <q-scroll-area ref="messageListRef" class="message-list" :style='{height: height}'>
     <q-item dense v-for="(message, index) in messages" :key="index"
       :class="{'user-message': message.sender === 'user', 'llm-message': message.sender === 'llm' }">
       <q-item-section>
@@ -13,34 +13,38 @@
         <div v-else class="markdown-body" v-html='renderMarkdown(message.content)' />
       </q-item-section>
     </q-item>
-  </q-list>
+  </q-scroll-area>
 </template>
 
 <script setup lang="ts">
 import { ref, toRef, watch, nextTick } from 'vue';
 import type { Message } from './Message';
 import { NotifyManager } from '../../notify'
-import { QList, useQuasar } from 'quasar';
+import { QScrollArea, useQuasar } from 'quasar';
 import { marked } from 'marked';
 
 const $q = useQuasar();
-const messageListRef = ref<QList | null>(null);
+const messageListRef = ref<QScrollArea>();
 
 const props = defineProps<{
   messages: Message[];
+  height: string;
 }>();
 const messages = toRef(props, 'messages');
+const height = toRef(props, 'height');
 
 const showCopyButton = ref(false);
 
 const scrollToBottom = () => {
   nextTick(() => {
-    const messageList = messageListRef.value?.$el;
-    if (messageList) {
-      messageList.scrollTop = messageList.scrollHeight;
+    const scrollArea = messageListRef.value;
+    const scrollTarget = scrollArea?.getScrollTarget();
+    if (scrollTarget && scrollArea) {
+      scrollArea.setScrollPosition('vertical', scrollTarget.scrollHeight, 0);
     }
   });
 };
+
 
 watch(messages, () => {
   scrollToBottom();

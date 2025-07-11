@@ -19,7 +19,7 @@
     </div>
 
     <div v-else :style='{height: bodyHeight}' class='full-width'>
-      <MessageList :messages="messages" />
+      <MessageList :messages="messages" :height="bodyHeight" />
     </div>
 
     <div class="q-my-sm q-mx-md fixed-bottom q-pa-sm">
