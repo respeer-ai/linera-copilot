@@ -30,16 +30,17 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import { useSettingsStore } from '../../stores/settings'
+import { PluginSettings } from '../../settings'
 
 const settingsStore = useSettingsStore()
 
 const selectedTab = ref('chat')
-const sdkVersion = ref(localStorage.getItem('sdkVersion') || 'v1.0.0')
+const sdkVersion = ref(PluginSettings.getSdkVersion() || 'v1.0.0')
 const sdkVersions = ['v1.0.0', 'v1.1.0', 'v2.0.0']
 
 // Persist SDK version to localStorage
 const persistSdkVersion = (version: string) => {
-  localStorage.setItem('sdkVersion', version)
+  PluginSettings.setSdkVersion(version)
 }
 
 // Initialize active tab from pinia

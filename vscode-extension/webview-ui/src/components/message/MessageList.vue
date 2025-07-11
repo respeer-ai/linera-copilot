@@ -5,7 +5,7 @@
       <q-item-section>
         <div v-if="message.sender === 'user'" class="user-message-content full-width text-grey" @mouseenter="showCopyButton = true"
           @mouseleave="showCopyButton = false">
-          {{ message.content }}
+          <span v-html="renderLlmContent(message.content)" />
           <q-btn v-show="showCopyButton" flat round icon="content_copy" size="0.4rem"
             @click="copyMessage(message.content)" />
         </div>
@@ -18,7 +18,10 @@
 <script setup lang="ts">
 import { ref, toRef } from 'vue';
 import type { Message } from './Message';
-import useNotification from '../../notify'
+import { NotifyManager } from '../../notify'
+import { useQuasar } from 'quasar';
+
+const $q = useQuasar();
 
 const props = defineProps<{
   messages: Message[];
@@ -26,7 +29,6 @@ const props = defineProps<{
 const messages = toRef(props, 'messages');
 
 const showCopyButton = ref(false);
-const notify = useNotification();
 
 const renderLlmContent = (content: string) => {
   // Simple heuristic to decide between markdown and html
@@ -36,11 +38,11 @@ const renderLlmContent = (content: string) => {
     // In a real app, you would use a markdown renderer here
     return content.replace(/\n/g, '<br>'); // Simple line breaks for demo
   }
-};
+}
 
 const copyMessage = (content: string) => {
   navigator.clipboard.writeText(content);
-  notify.showSuccess('Copied to clipboard')
+  NotifyManager.showSuccess($q, 'Copied to clipboard')
 };
 </script>
 

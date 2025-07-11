@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <div v-else :style='{height: bodyHeight}'>
+    <div v-else :style='{height: bodyHeight}' class='full-width'>
       <MessageList :messages="messages" />
     </div>
 
@@ -32,6 +32,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { Message } from '../message/Message';
+import { streamLLMResponse } from '../../llm';
 
 import MessageInput from '../input/MessageInput.vue';
 import MessageList from '../message/MessageList.vue';
@@ -62,18 +63,44 @@ const cards = ref([
 const bodyHeight = ref('0px')
 const chatting = ref(false)
 const messages = ref([] as Message[])
+const newMessage = ref(true)
 
 const onMessageInputResize = (size: { height: number; }) => {
   bodyHeight.value = `${window.innerHeight - size.height - 48}px`
 }
 
-const onActionCardClick = (card: { title: any; subtitle: any; }) => {
+const splitTaskRequest = async (prompt: string) => {
+  try {
+    const responseGenerator = streamLLMResponse(prompt);
+    
+    for await (const response of responseGenerator) {
+      if (response.isComplete) {
+        newMessage.value = true
+      } else {
+        if (newMessage.value) {
+          messages.value.push({
+            sender: 'llm',
+            content: response.text
+          })
+        } else {
+          messages.value[messages.value.length - 1].content += response.text;
+        }
+        newMessage.value = false
+      }
+    }
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+
+const onActionCardClick = async (card: { title: any; subtitle: any; }) => {
   chatting.value = true
-  const prompt = `Break down the task "${card.title}" into clear steps for a language model to follow.\nTask: ${card.title}\nSubtitle: ${card.subtitle}\nSteps:`;
+  const prompt = `Break down the task "${card.title}" into clear steps for programming copilot to follow.\nTask: ${card.title}\nSubtitle: ${card.subtitle}`;
   messages.value.push({
     sender: 'user',
     content: prompt
   });
+  await splitTaskRequest(prompt)
 }
 
 </script>

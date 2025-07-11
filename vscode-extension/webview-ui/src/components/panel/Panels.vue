@@ -21,7 +21,7 @@
     </q-tab-panel>
 
     <q-tab-panel name="settings">
-      <div>Settings Panel Content</div>
+      <SettingsPanel />
     </q-tab-panel>
   </q-tab-panels>
 </template>
@@ -32,6 +32,7 @@ import { useSettingsStore } from '../../stores/settings';
 import { QTabPanels, QTabPanel } from 'quasar';
 
 import CraftPanel from './CraftPanel.vue';
+import SettingsPanel from './SettingsPanel.vue';
 
 const settingsStore = useSettingsStore();
 const selectedTab = computed(() => settingsStore.selectedTab);
