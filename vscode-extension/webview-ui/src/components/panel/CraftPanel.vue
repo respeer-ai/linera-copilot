@@ -83,7 +83,12 @@ const splitTaskRequest = async (prompt: string) => {
             content: response.text
           })
         } else {
-          messages.value[messages.value.length - 1].content += response.text;
+          const index = messages.value.length - 1
+          const message = {
+            ...messages.value[index],
+            content: messages.value[index].content + response.text
+          }
+          messages.value.splice(index, 1, message);
         }
         newMessage.value = false
       }

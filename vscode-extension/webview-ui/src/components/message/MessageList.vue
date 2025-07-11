@@ -1,5 +1,5 @@
 <template>
-  <q-list class="message-list">
+  <q-list ref="messageListRef" class="message-list">
     <q-item dense v-for="(message, index) in messages" :key="index"
       :class="{'user-message': message.sender === 'user', 'llm-message': message.sender === 'llm' }">
       <q-item-section>
@@ -20,10 +20,11 @@
 import { ref, toRef } from 'vue';
 import type { Message } from './Message';
 import { NotifyManager } from '../../notify'
-import { useQuasar } from 'quasar';
+import { QList, useQuasar } from 'quasar';
 import { marked } from 'marked';
 
 const $q = useQuasar();
+const messageListRef = ref<QList | null>(null);
 
 const props = defineProps<{
   messages: Message[];
@@ -109,7 +110,7 @@ const copyMessage = (content: string) => {
   background-color: #1f2328;
 }
 
-.markdown-body table tr, tr:nth-child(2n)  {
+.markdown-body table tr, tr:nth-child(2n) {
   background-color: #1f2328;
 }
 </style>
