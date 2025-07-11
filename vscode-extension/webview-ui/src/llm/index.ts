@@ -29,9 +29,9 @@ export async function requestLLMResponse(
 
   if (options.jsonFormat) {
     const example = JSON.stringify(jsonExample)
-    prompt += `\nReturn ONLY a JSON array, with each step following this structure: ${example}\n`
+    prompt += `\nReturn ONLY a JSON ${options.isList ? "array" : "object"}, with each step following this structure: ${example}\n`
     if (options.isList) {
-      prompt += 'The response should be a list. It could have nested items.'
+      prompt += '\nIt could have nested items.'
     }
   }
 
@@ -63,6 +63,7 @@ export async function requestLLMResponse(
   }
 
   const data = await response.json();
+  console.log(prompt, data)
   
   // Default to text content
   return (data.choices?.[0]?.message?.content as string)?.replace('```json', '').replace('```', '') || '';
