@@ -12,7 +12,7 @@ const useNotification = () => {
     $q.notify({
       type: 'positive',
       message,
-      position: 'top'
+      position: 'bottom-right'
     })
   }
 
@@ -24,7 +24,7 @@ const useNotification = () => {
     $q.notify({
       type: 'negative',
       message,
-      position: 'top'
+      position: 'bottom-right'
     })
   }
 
@@ -36,7 +36,7 @@ const useNotification = () => {
     $q.notify({
       type: 'info',
       message,
-      position: 'top'
+      position: 'bottom-right'
     })
   }
 

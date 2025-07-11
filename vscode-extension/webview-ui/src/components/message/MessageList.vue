@@ -1,6 +1,6 @@
 <template>
   <q-list class="message-list">
-    <q-item v-for="(message, index) in messages" :key="index"
+    <q-item dense v-for="(message, index) in messages" :key="index"
       :class="{ 'user-message': message.sender === 'user', 'llm-message': message.sender === 'llm' }">
       <q-item-section>
         <div v-if="message.sender === 'user'" class="user-message-content full-width text-grey" @mouseenter="showCopyButton = true"
