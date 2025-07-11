@@ -10,9 +10,8 @@ export function createLoadingHtml(text: string = ''): string {
             background-color: rgba(0, 0, 0, 0.5);
             padding: 20px;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            justify-content: center;
             color: white;
         ">
             <div style="
@@ -22,8 +21,9 @@ export function createLoadingHtml(text: string = ''): string {
                 width: 30px;
                 height: 30px;
                 animation: spin 1s linear infinite;
+                margin-right: 10px;
             "></div>
-            ${text ? `<div style="margin-top: 10px;">${text}</div>` : ''}
+            <div>${text}</div>
         </div>
 
         <style>

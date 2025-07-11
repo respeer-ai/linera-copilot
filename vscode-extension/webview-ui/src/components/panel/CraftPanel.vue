@@ -33,11 +33,12 @@
 import { ref } from 'vue';
 import type { Message } from '../message/Message';
 import { requestLLMResponse, streamLLMResponse } from '../../llm';
-import { exampleTask, projectTasksToHtml, type ProjectTask } from './ProjectTask';
+import { exampleTask, projectTasksToHtml, type CraftTask } from '../craft/CraftTask';
 
 import MessageInput from '../input/MessageInput.vue';
 import MessageList from '../message/MessageList.vue';
 import { createLoadingHtml } from '../../waiting';
+import { PluginSettings } from '../../settings';
 
 const cards = ref([
   {
@@ -66,7 +67,7 @@ const bodyHeight = ref('0px')
 const chatting = ref(false)
 const messages = ref([] as Message[])
 const newMessage = ref(true)
-const tasks = ref([] as ProjectTask[])
+const tasks = ref([] as CraftTask[])
 
 const onMessageInputResize = (size: { height: number; }) => {
   bodyHeight.value = `${window.innerHeight - size.height - 48}px`
@@ -78,11 +79,42 @@ const taskJsonRequest = async (message: string) => {
     content: createLoadingHtml('Preparing project task list...')
   })
 
-  const personality = 'You are a master at processing text and extracting structured task lists from it.'
-  const tasksJson = await requestLLMResponse(personality, message, { jsonFormat: true, isList: true }, exampleTask)
-  console.log(tasksJson)
-  tasks.value = JSON.parse(tasksJson)
-  messages.value[messages.value.length - 1].content = projectTasksToHtml(tasks.value)
+  message = `Based on the task below, return a clear, structured JSON list of development steps for a programming copilot.
+             【Task Description】
+             ${message}
+             Always provide the **full relative file path**, including subfolders.
+             - ✅ Correct: "contracts/src/game.rs"
+             - ❌ Incorrect: "game.rs"
+             【Important Notes】
+             - DO NOT include any text outside the JSON.
+             - The JSON must strictly follow the structure above.
+             - Only list essential files needed in each step.
+             - Avoid lengthy explanations—just a clear, concise JSON response.
+             【Reminder】
+             Be sure to always return the **full relative path** for files. Do not skip folders.`
+
+  const personality = 'You are an assistant for Linera blockchain development.'
+  let tasksJson = ''
+
+  try {
+    tasksJson = await requestLLMResponse(personality, message, { jsonFormat: true, isList: true }, exampleTask)
+  } catch (error) {
+    messages.value[messages.value.length - 1].content = JSON.stringify(error)
+  }
+
+  try {
+    tasks.value = JSON.parse(tasksJson)
+  } catch (error) {
+    console.log(tasksJson)
+    messages.value[messages.value.length - 1].content = JSON.stringify(error)
+  }
+
+  try {
+    messages.value[messages.value.length - 1].content = projectTasksToHtml(tasks.value)
+  } catch (error) {
+    console.log(tasks.value)
+    messages.value[messages.value.length - 1].content = JSON.stringify(error)
+  }
 }
 
 const splitTaskRequest = async (prompt: string) => {
@@ -118,7 +150,8 @@ const splitTaskRequest = async (prompt: string) => {
 
 const onActionCardClick = async (card: { title: any; subtitle: any; }) => {
   chatting.value = true
-  const prompt = `Break down the task "${card.title}" into clear steps for programming copilot to follow.\nTask: ${card.title}\nSubtitle: ${card.subtitle}`;
+  const prompt = `Break down the task "${card.title}" into clear steps for programming copilot to follow.\n
+                  Task: ${card.title}\nSubtitle: ${card.subtitle}. It will be built on Linera blockchain with SDK version ${PluginSettings.getSdkVersion()}`;
   messages.value.push({
     sender: 'user',
     content: prompt

@@ -1,7 +1,7 @@
 import { PluginSettings } from '../settings';
 
 // LLM API response structure
-interface LLMResponse {
+export interface LLMResponse {
   text: string;       // Processed text chunk
   isComplete: boolean; // Whether the response is complete
 }
