@@ -24,7 +24,6 @@
 
     <div class="q-my-sm q-mx-md fixed-bottom q-pa-sm">
       <MessageInput @send="onSendMessage" />
- />
       <q-resize-observer @resize="onMessageInputResize" />
     </div>
   </div>
@@ -37,7 +36,7 @@ import { requestLLMResponse, streamLLMResponse, type LLMResponse } from '../../l
 import { exampleTask, projectTasksToHtml, type CraftTask } from '../craft/CraftTask';
 import { createLoadingHtml } from '../../waiting';
 import { PluginSettings } from '../../settings';
-import { analyzeUserIntent } from '../../intent';
+import { analyzeUserIntent, type UserIntent } from '../../intent';
 
 import MessageInput from '../input/MessageInput.vue';
 import MessageList from '../message/MessageList.vue';
@@ -68,24 +67,30 @@ const cards = ref([
 const bodyHeight = ref('0px')
 const chatting = ref(false)
 const messages = ref([] as Message[])
-const newMessage = ref(true)
 const tasks = ref([] as CraftTask[])
+const messageMode = ref('Replace');
 
 const onMessageInputResize = (size: { height: number; }) => {
   bodyHeight.value = `${window.innerHeight - size.height - 48}px`
 }
 
-const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse, void, unknown>) => {
+const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse, void, unknown>, needTaskJson: boolean) => {
   for await (const response of responseGenerator) {
     if (response.isComplete) {
-      newMessage.value = true
-      await taskJsonRequest(messages.value[messages.value.length - 1].content)
+      messageMode.value = 'New';
+      if (needTaskJson) {
+        await taskJsonRequest(messages.value[messages.value.length - 1].content)
+      }
     } else {
-      if (newMessage.value) {
+      if (messageMode.value === 'New') {
+        messageMode.value = 'Append'
         messages.value.push({
           sender: 'llm',
           content: response.text
         })
+      } else if (messageMode.value === 'Replace') {
+        messages.value[messages.value.length - 1].content = response.text
+        messageMode.value = 'Append';
       } else {
         const index = messages.value.length - 1
         const message = {
@@ -94,8 +99,17 @@ const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse
         }
         messages.value.splice(index, 1, message);
       }
-      newMessage.value = false
     }
+  }
+}
+
+const executeIntent = async (intent: UserIntent) => {
+  try {
+    const personality = 'You are a programming assistant managing a project with defined tasks.'
+    const responseGenerator = streamLLMResponse(personality, intent.intentDescription);
+    await onStreamLLMResponse(responseGenerator, false)
+  } catch (error) {
+    messages.value[messages.value.length - 1].content = `${error}`
   }
 }
 
@@ -109,22 +123,20 @@ const onSendMessage = async (message: string) => {
     sender: 'llm',
     content: createLoadingHtml('I\'m thinking...')
   })
+  messageMode.value = 'Replace';
 
   const intent = await analyzeUserIntent(message, JSON.stringify(tasks.value))
-  console.log(intent)
-  if (!intent.isContextRelevant) {
+  if (!intent.isContextRelevant && tasks.value.length > 0) {
     messages.value[messages.value.length - 1].content = intent.intentDescription
     return
   }
-  // TODO: execute action, tool call, function call
 
-  try {
-    const personality = 'You are a programming assistant managing a project with defined tasks. Given the user\'s input below and the current active project task, answer only "yes" or "no":'
-    const responseGenerator = streamLLMResponse(personality, message);
-    await onStreamLLMResponse(responseGenerator)
-  } catch (error) {
-    console.error("Error:", error);
+  if (tasks.value.length === 0) {
+    await splitTaskRequest(message)
+    return
   }
+
+  await executeIntent(intent)
 }
 
 const taskJsonRequest = async (message: string) => {
@@ -132,6 +144,7 @@ const taskJsonRequest = async (message: string) => {
     sender: 'llm',
     content: createLoadingHtml('Preparing project task list...')
   })
+  messageMode.value = 'Replace';
 
   message = `Based on the task below, return a clear, structured JSON list of development steps for a programming copilot.
              【Task Description】
@@ -154,31 +167,38 @@ const taskJsonRequest = async (message: string) => {
   try {
     tasksJson = await requestLLMResponse(personality, message, { jsonFormat: true, isList: true }, exampleTask)
   } catch (error) {
-    messages.value[messages.value.length - 1].content = JSON.stringify(error)
+    messages.value[messages.value.length - 1].content = `${error}`
   }
+  messageMode.value = 'Replace';
 
   try {
     tasks.value = JSON.parse(tasksJson)
   } catch (error) {
     console.log(tasksJson)
-    messages.value[messages.value.length - 1].content = JSON.stringify(error)
+    messages.value[messages.value.length - 1].content = `${error}`
   }
 
   try {
     messages.value[messages.value.length - 1].content = projectTasksToHtml(tasks.value)
   } catch (error) {
     console.log(tasks.value)
-    messages.value[messages.value.length - 1].content = JSON.stringify(error)
+    messages.value[messages.value.length - 1].content = `${error}`
   }
 }
 
 const splitTaskRequest = async (prompt: string) => {
+  messages.value.push({
+    sender: 'llm',
+    content: createLoadingHtml('I\'m thinking...')
+  })
+  messageMode.value = 'Replace';
+
   try {
     const personality = 'You are an experienced top-tier engineer and architect who excels at breaking down tasks into manageable components.'
     const responseGenerator = streamLLMResponse(personality, prompt);
-    await onStreamLLMResponse(responseGenerator)
+    await onStreamLLMResponse(responseGenerator, true)
   } catch (error) {
-    console.error("Error:", error);
+    messages.value[messages.value.length - 1].content = `${error}`
   }
 }
 
