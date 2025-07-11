@@ -32,9 +32,32 @@ const messages = toRef(props, 'messages');
 
 const showCopyButton = ref(false);
 
-const isHtml = (content: string) => {
-  const doc = new DOMParser().parseFromString(content, 'text/html');
-  return Array.from(doc.body.childNodes).some(node => node.nodeType === 1);
+const isHtml = (content: string): boolean => {
+  if (typeof content !== 'string') return false
+
+  const doc = new DOMParser().parseFromString(content, 'text/html')
+
+  // 过滤掉纯空白、注释等无效节点
+  const nodes = Array.from(doc.body.childNodes).filter(node => {
+    return node.nodeType === 1 || (node.nodeType === 3 && node.textContent?.trim())
+  })
+
+  // 至少有 1 个元素节点，且不全是纯文本
+  const hasElement = nodes.some(node => node.nodeType === 1)
+  const hasText = nodes.some(node => node.nodeType === 3)
+
+  // 优先判断：有元素 且 不只是纯文本
+  if (hasElement && !hasText) {
+    return true
+  }
+
+  // 容错：匹配典型 HTML 标签
+  const htmlPattern = /<([a-z]+)(\s|>)/i
+  if (htmlPattern.test(content)) {
+    return true
+  }
+
+  return false
 }
 
 const lineFeed2Br = (content: string) => {
