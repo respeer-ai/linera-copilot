@@ -82,16 +82,17 @@ const taskJsonRequest = async (message: string) => {
   message = `Based on the task below, return a clear, structured JSON list of development steps for a programming copilot.
              【Task Description】
              ${message}
-             Always provide the **full relative file path**, including subfolders.
-             - ✅ Correct: "contracts/src/game.rs"
-             - ❌ Incorrect: "game.rs"
              【Important Notes】
              - DO NOT include any text outside the JSON.
              - The JSON must strictly follow the structure above.
              - Only list essential files needed in each step.
              - Avoid lengthy explanations—just a clear, concise JSON response.
              【Reminder】
-             Be sure to always return the **full relative path** for files. Do not skip folders.`
+             Be sure to always return the **full relative path** for files. Do not skip folders.
+             【Output Instructions】
+             Always provide the **full relative file path**, including subfolders.
+             - ✅ Correct: "contracts/src/game.rs"
+             - ❌ Incorrect: "game.rs"`
 
   const personality = 'You are an assistant for Linera blockchain development.'
   let tasksJson = ''
@@ -150,7 +151,7 @@ const splitTaskRequest = async (prompt: string) => {
 
 const onActionCardClick = async (card: { title: any; subtitle: any; }) => {
   chatting.value = true
-  const prompt = `Break down the task "${card.title}" into clear steps for programming copilot to follow.\n
+  const prompt = `Break down the task "${card.title}" into clear steps for programming copilot to follow.
                   Task: ${card.title}\nSubtitle: ${card.subtitle}. It will be built on Linera blockchain with SDK version ${PluginSettings.getSdkVersion()}`;
   messages.value.push({
     sender: 'user',

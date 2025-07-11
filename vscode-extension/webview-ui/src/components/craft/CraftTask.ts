@@ -1,10 +1,16 @@
 import { streamLLMResponse, type LLMResponse } from "../../llm";
 
+export interface FileOperation {
+  type: 'create' | 'modify' | 'delete' | 'move';
+  sourcePath: string;
+  targetPath?: string;
+}
+
 export interface SubTask {
   id: string;
   title: string;
   completed: boolean;
-  filePaths: string[];
+  fileOperations: FileOperation[];
   prompt: string;
   role: string,
   subTasks?: SubTask[]; // Allow nested subtasks
@@ -19,40 +25,51 @@ export interface CraftTask {
 
 export const exampleTask: CraftTask = {
   id: '1',
-  title: 'Develop a full-stack e-commerce platform',
+  title: 'Implement e-commerce platform',
   completed: false,
   subTasks: [
     {
       id: '1-1',
-      title: 'Design database schema',
+      title: 'Setup backend services',
       completed: false,
-      prompt: 'Create a normalized database schema for products, users, orders and payments with proper relationships',
-      filePaths: ['src/database/schema.ts'],
-      role: 'You\'re a senior database architect',
+      prompt: 'Create REST API for product management',
+      fileOperations: [
+        { type: 'create', sourcePath: 'src/api/products.ts', targetPath: '' },
+        { type: 'modify', sourcePath: 'src/database/schema.ts', targetPath: '' }
+      ],
+      role: 'You\'re a backend developer',
       subTasks: [
         {
           id: '1-1-1',
-          title: 'Define product table structure',
+          title: 'Product CRUD endpoints',
           completed: false,
-          prompt: 'Design product table with fields for name, description, price, inventory and categories',
-          filePaths: ['src/database/productTable.ts'],
-          role: 'You\'re a database specialist',
+          prompt: 'Implement create, read, update, delete endpoints for products',
+          fileOperations: [
+            { type: 'create', sourcePath: 'src/api/productCrud.ts', targetPath: '' }
+          ],
+          role: 'You\'re an API engineer',
           subTasks: [
             {
               id: '1-1-1-1',
-              title: 'Implement product categories hierarchy',
+              title: 'Database schema update',
               completed: false,
-              prompt: 'Create a self-referential categories table with parent-child relationships',
-              filePaths: ['src/database/categoriesTable.ts'],
-              role: 'You\'re a database expert',
+              prompt: 'Add new fields to product table schema',
+              fileOperations: [
+                { type: 'modify', sourcePath: 'src/database/productTable.ts', targetPath: '' }
+              ],
+              role: 'You\'re a database architect',
               subTasks: [
                 {
                   id: '1-1-1-1-1',
-                  title: 'Add category metadata support',
+                  title: 'Add category reference',
                   completed: false,
-                  prompt: 'Extend categories table to support additional metadata fields like description and icon',
-                  filePaths: ['src/database/categoryMetadata.ts'],
-                  role: 'You\'re a database designer'
+                  prompt: 'Add foreign key to categories table in product schema',
+                  fileOperations: [
+                    { type: 'modify', sourcePath: 'src/database/productTable.ts', targetPath: '' },
+                    { type: 'modify', sourcePath: 'src/database/categoriesTable.ts', targetPath: '' }
+                  ],
+                  role: 'You\'re a database designer',
+                  subTasks: []
                 }
               ]
             }
@@ -62,19 +79,14 @@ export const exampleTask: CraftTask = {
     },
     {
       id: '1-2',
-      title: 'Implement user authentication',
+      title: 'Create frontend components',
       completed: false,
-      prompt: 'Create secure authentication system with JWT tokens, password hashing and session management',
-      filePaths: ['src/auth/authService.ts'],
-      role: 'You\'re a security engineer'
-    },
-    {
-      id: '1-3',
-      title: 'Develop product catalog API',
-      completed: false,
-      prompt: 'Build RESTful API endpoints for product CRUD operations with pagination and filtering',
-      filePaths: ['src/api/products.ts'],
-      role: 'You\'re an API developer'
+      prompt: 'Develop React components for product listing',
+      fileOperations: [
+        { type: 'create', sourcePath: 'src/ui/ProductList.tsx', targetPath: '' }
+      ],
+      role: 'You\'re a frontend developer',
+      subTasks: []
     }
   ]
 };
@@ -87,6 +99,8 @@ export const exampleTask: CraftTask = {
 export function projectTasksToHtml(tasks: (CraftTask | SubTask)[]): string {
   if (!tasks || tasks.length === 0) return '<div>No tasks available</div>';
 
+  
+
   const renderTasks = (tasks: (CraftTask | SubTask)[], level = 0): string => {
     if (!tasks || tasks.length === 0) return '';
     
@@ -95,7 +109,9 @@ export function projectTasksToHtml(tasks: (CraftTask | SubTask)[]): string {
       ul += `<li>
         <div style="font-weight: ${level === 0 ? 'bold' : 'normal'}">
           ${task.title} ${task.completed ? '(Completed)' : ''}
-          ${'filePaths' in task && task.filePaths && task.filePaths.length > 0 ? '<br><small style="padding-left: 24px;">' + task.filePaths.map(fp => fp.split('/').pop()).join('<br>') + '</small>' : ''}
+          ${'fileOperations' in task && task.fileOperations && task.fileOperations.length > 0 ? '<br><small><div style="padding-left: 24px;">' + task.fileOperations.map(op => 
+            `<div>${op.type} ${op.sourcePath}${op.targetPath ? ' -> ' + op.targetPath : ''}</div>`
+          ).join('') + '</div></small>' : ''}
         </div>`;
       if (task.subTasks && task.subTasks.length > 0) {
         ul += renderTasks(task.subTasks, level + 1);

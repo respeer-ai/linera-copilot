@@ -29,7 +29,7 @@ export async function requestLLMResponse(
 
   if (options.jsonFormat) {
     const example = JSON.stringify(jsonExample)
-    prompt += `You should respond a full json then client can parse it to a structure directly. The json struct must follow this example: ${example}.`
+    prompt += `\nReturn ONLY a JSON array, with each step following this structure: ${example}\n`
     if (options.isList) {
       prompt += 'The response should be a list. It could have nested items.'
     }
