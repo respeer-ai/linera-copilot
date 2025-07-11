@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRef } from 'vue';
+import { ref, toRef, watch, nextTick } from 'vue';
 import type { Message } from './Message';
 import { NotifyManager } from '../../notify'
 import { QList, useQuasar } from 'quasar';
@@ -32,6 +32,19 @@ const props = defineProps<{
 const messages = toRef(props, 'messages');
 
 const showCopyButton = ref(false);
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    const messageList = messageListRef.value?.$el;
+    if (messageList) {
+      messageList.scrollTop = messageList.scrollHeight;
+    }
+  });
+};
+
+watch(messages, () => {
+  scrollToBottom();
+}, { deep: true });
 
 const isHtml = (content: string): boolean => {
   if (typeof content !== 'string') return false
