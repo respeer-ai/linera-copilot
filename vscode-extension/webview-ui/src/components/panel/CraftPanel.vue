@@ -37,6 +37,7 @@ import { exampleTask, projectTasksToHtml, type ProjectTask } from './ProjectTask
 
 import MessageInput from '../input/MessageInput.vue';
 import MessageList from '../message/MessageList.vue';
+import { createLoadingHtml } from '../../waiting';
 
 const cards = ref([
   {
@@ -72,14 +73,16 @@ const onMessageInputResize = (size: { height: number; }) => {
 }
 
 const taskJsonRequest = async (message: string) => {
+  messages.value.push({
+    sender: 'llm',
+    content: createLoadingHtml('Preparing project task list...')
+  })
+
   const personality = 'You are a master at processing text and extracting structured task lists from it.'
   const tasksJson = await requestLLMResponse(personality, message, { jsonFormat: true, isList: true }, exampleTask)
   console.log(tasksJson)
   tasks.value = JSON.parse(tasksJson)
-  messages.value.push({
-    sender: 'llm',
-    content: projectTasksToHtml(tasks.value)
-  })
+  messages.value[messages.value.length - 1].content = projectTasksToHtml(tasks.value)
 }
 
 const splitTaskRequest = async (prompt: string) => {
