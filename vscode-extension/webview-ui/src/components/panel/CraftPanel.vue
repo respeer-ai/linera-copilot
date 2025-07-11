@@ -118,19 +118,9 @@ const executeIntent = async (intent: UserIntent) => {
 const executeNextTask = async () => {
   const task = projectTaskManager.value?.getNextTaskInfo()
   if (!task) {
-    messages.value.push({
-      sender: 'llm',
-      content: 'No more tasks available.'
-    });
-    messageMode.value = 'Replace';
+    messages.value[messages.value.length - 1].content = 'No more tasks available.'
     return;
   }
-
-  messages.value.push({
-    sender: 'llm',
-    content: createLoadingHtml('I\'m thinking...')
-  })
-  messageMode.value = 'Replace';
 
   try {
     const responseGenerator = projectTaskManager.value?.executeNext();
@@ -138,7 +128,7 @@ const executeNextTask = async () => {
       messages.value[messages.value.length - 1].content = 'No response generator available for the next task.';
       return;
     }
-    await onStreamLLMResponse(responseGenerator, true)
+    await onStreamLLMResponse(responseGenerator, false)
   } catch (error) {
     messages.value[messages.value.length - 1].content = `${error}`
   }
