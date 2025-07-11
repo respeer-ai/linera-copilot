@@ -123,11 +123,12 @@ const copyMessage = (content: string) => {
 }
 
 .markdown-body .highlight pre, .markdown-body pre {
-  color: #f6f8fa;
-  background-color: #1f2328;
+  color: #f6f8fa !important;
+  background-color: #1f2328 !important;
 }
 
-.markdown-body table tr, tr:nth-child(2n) {
-  background-color: #1f2328;
+.markdown-body table tr,
+.markdown-body table tr:nth-child(2n) {
+  background-color: #1f2328 !important;
 }
 </style>

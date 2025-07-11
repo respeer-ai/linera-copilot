@@ -7,9 +7,72 @@ interface LLMResponse {
 }
 
 /**
+ * Makes a single request to LLM API and returns the response
+ * @param prompt The input prompt for the LLM
+ * @param options Configuration options for the request
+ * @param options.jsonFormat Whether to return response in JSON format (default: false)
+ * @returns Promise resolving to LLM response text
+ */
+export async function requestLLMResponse(
+  personality: string,
+  prompt: string,
+  options: { jsonFormat?: boolean, isList?: boolean } = {},
+  jsonExample?: any
+): Promise<string> {
+  const apiUrl = PluginSettings.getModelUrl();
+  const apiKey = PluginSettings.getApiToken();
+  const modelName = PluginSettings.getModelName();
+
+  if (!apiUrl || !apiKey) {
+    throw new Error('LLM API configuration is missing');
+  }
+
+  if (options.jsonFormat) {
+    const example = JSON.stringify(jsonExample)
+    prompt += `You should respond a full json then client can parse it to a structure directly. The json struct must follow this example: ${example}.`
+    if (options.isList) {
+      prompt += 'The response should be a list. It could have nested items.'
+    }
+  }
+
+  // Prepare the request
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: modelName,
+      messages: [
+        {
+          role: 'system',
+          content: personality
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      stream: false
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`LLM API request failed: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  
+  // Default to text content
+  return (data.choices?.[0]?.message?.content as string)?.replace('```json', '').replace('```', '') || '';
+}
+
+
+/**
  * Streams text from LLM API and yields processed chunks
  */
-export async function* streamLLMResponse(prompt: string): AsyncGenerator<LLMResponse, void, unknown> {
+export async function* streamLLMResponse(personality: string, prompt: string): AsyncGenerator<LLMResponse, void, unknown> {
   const apiUrl = PluginSettings.getModelUrl();
   const apiKey = PluginSettings.getApiToken();
   const modelName = PluginSettings.getModelName();
@@ -31,7 +94,7 @@ export async function* streamLLMResponse(prompt: string): AsyncGenerator<LLMResp
       messages: [
         {
           role: 'system',
-          content: 'You are an experienced top-tier engineer and architect who excels at breaking down tasks into manageable components.'
+          content: personality
         },
         {
           role: 'user',

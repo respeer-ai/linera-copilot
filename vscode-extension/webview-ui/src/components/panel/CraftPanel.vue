@@ -32,7 +32,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { Message } from '../message/Message';
-import { streamLLMResponse } from '../../llm';
+import { requestLLMResponse, streamLLMResponse } from '../../llm';
+import { exampleTask, projectTasksToHtml, type ProjectTask } from './ProjectTask';
 
 import MessageInput from '../input/MessageInput.vue';
 import MessageList from '../message/MessageList.vue';
@@ -64,18 +65,32 @@ const bodyHeight = ref('0px')
 const chatting = ref(false)
 const messages = ref([] as Message[])
 const newMessage = ref(true)
+const tasks = ref([] as ProjectTask[])
 
 const onMessageInputResize = (size: { height: number; }) => {
   bodyHeight.value = `${window.innerHeight - size.height - 48}px`
 }
 
+const taskJsonRequest = async (message: string) => {
+  const personality = 'You are a master at processing text and extracting structured task lists from it.'
+  const tasksJson = await requestLLMResponse(personality, message, { jsonFormat: true, isList: true }, exampleTask)
+  console.log(tasksJson)
+  tasks.value = JSON.parse(tasksJson)
+  messages.value.push({
+    sender: 'llm',
+    content: projectTasksToHtml(tasks.value)
+  })
+}
+
 const splitTaskRequest = async (prompt: string) => {
   try {
-    const responseGenerator = streamLLMResponse(prompt);
+    const personality = 'You are an experienced top-tier engineer and architect who excels at breaking down tasks into manageable components.'
+    const responseGenerator = streamLLMResponse(personality, prompt);
     
     for await (const response of responseGenerator) {
       if (response.isComplete) {
         newMessage.value = true
+        await taskJsonRequest(messages.value[messages.value.length - 1].content)
       } else {
         if (newMessage.value) {
           messages.value.push({
