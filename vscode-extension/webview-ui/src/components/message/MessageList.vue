@@ -1,15 +1,16 @@
 <template>
   <q-list class="message-list">
     <q-item dense v-for="(message, index) in messages" :key="index"
-      :class="{ 'user-message': message.sender === 'user', 'llm-message': message.sender === 'llm' }">
+      :class="{'user-message': message.sender === 'user', 'llm-message': message.sender === 'llm' }">
       <q-item-section>
         <div v-if="message.sender === 'user'" class="user-message-content full-width text-grey" @mouseenter="showCopyButton = true"
           @mouseleave="showCopyButton = false">
-          <span v-html="renderLlmContent(message.content)" />
+          <span v-html="lineFeed2Br(message.content)" />
           <q-btn v-show="showCopyButton" flat round icon="content_copy" size="0.4rem"
             @click="copyMessage(message.content)" />
         </div>
-        <div v-else v-html="renderLlmContent(message.content)" />
+        <div v-else-if='isHtml(message.content)' v-html="message.content" />
+        <div v-else class="markdown-body" v-html='renderMarkdown(message.content)' />
       </q-item-section>
     </q-item>
   </q-list>
@@ -20,6 +21,7 @@ import { ref, toRef } from 'vue';
 import type { Message } from './Message';
 import { NotifyManager } from '../../notify'
 import { useQuasar } from 'quasar';
+import { marked } from 'marked';
 
 const $q = useQuasar();
 
@@ -30,14 +32,17 @@ const messages = toRef(props, 'messages');
 
 const showCopyButton = ref(false);
 
-const renderLlmContent = (content: string) => {
-  // Simple heuristic to decide between markdown and html
-  if (content.includes('<') && content.includes('>')) {
-    return content; // Treat as HTML
-  } else {
-    // In a real app, you would use a markdown renderer here
-    return content.replace(/\n/g, '<br>'); // Simple line breaks for demo
-  }
+const isHtml = (content: string) => {
+  const doc = new DOMParser().parseFromString(content, 'text/html');
+  return Array.from(doc.body.childNodes).some(node => node.nodeType === 1);
+}
+
+const lineFeed2Br = (content: string) => {
+  return content.replace(/\n/g, '<br>');
+}
+
+const renderMarkdown = (content: string) => {
+  return marked.parse(content);
 }
 
 const copyMessage = (content: string) => {
@@ -64,5 +69,11 @@ const copyMessage = (content: string) => {
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
+}
+
+/* 确保 markdown-body 类的样式正确应用 */
+:deep(.markdown-body) {
+  background-color: transparent;
+  color: inherit;
 }
 </style>
