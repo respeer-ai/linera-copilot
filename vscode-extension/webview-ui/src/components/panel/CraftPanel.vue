@@ -37,6 +37,7 @@ import { exampleTask, projectTasksToHtml, type CraftTask } from '../craft/CraftT
 import { createLoadingHtml } from '../../waiting';
 import { PluginSettings } from '../../settings';
 import { analyzeUserIntent, type UserIntent } from '../../intent';
+import { ProjectTaskManager } from '../craft/Craft';
 
 import MessageInput from '../input/MessageInput.vue';
 import MessageList from '../message/MessageList.vue';
@@ -69,6 +70,7 @@ const chatting = ref(false)
 const messages = ref([] as Message[])
 const tasks = ref([] as CraftTask[])
 const messageMode = ref('Replace');
+const projectTaskManager = ref(undefined as ProjectTaskManager | undefined);
 
 const onMessageInputResize = (size: { height: number; }) => {
   bodyHeight.value = `${window.innerHeight - size.height - 48}px`
@@ -113,6 +115,35 @@ const executeIntent = async (intent: UserIntent) => {
   }
 }
 
+const executeNextTask = async () => {
+  const task = projectTaskManager.value?.getNextTaskInfo()
+  if (!task) {
+    messages.value.push({
+      sender: 'llm',
+      content: 'No more tasks available.'
+    });
+    messageMode.value = 'Replace';
+    return;
+  }
+
+  messages.value.push({
+    sender: 'llm',
+    content: createLoadingHtml('I\'m thinking...')
+  })
+  messageMode.value = 'Replace';
+
+  try {
+    const responseGenerator = projectTaskManager.value?.executeNext();
+    if (!responseGenerator) {
+      messages.value[messages.value.length - 1].content = 'No response generator available for the next task.';
+      return;
+    }
+    await onStreamLLMResponse(responseGenerator, true)
+  } catch (error) {
+    messages.value[messages.value.length - 1].content = `${error}`
+  }
+}
+
 const onSendMessage = async (message: string) => {
   messages.value.push({
     sender: 'user',
@@ -133,6 +164,10 @@ const onSendMessage = async (message: string) => {
 
   if (tasks.value.length === 0) {
     await splitTaskRequest(message)
+    return
+  }
+  if (intent.requestNextTask) {
+    await executeNextTask()
     return
   }
 
@@ -184,6 +219,8 @@ const taskJsonRequest = async (message: string) => {
     console.log(tasks.value)
     messages.value[messages.value.length - 1].content = `${error}`
   }
+
+  projectTaskManager.value = new ProjectTaskManager(tasks.value[0]);
 }
 
 const splitTaskRequest = async (prompt: string) => {

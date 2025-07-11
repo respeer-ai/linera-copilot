@@ -11,6 +11,9 @@ export interface UserIntent {
     confidence: number;
     /** 建议的操作类型(如'refactor', 'explain', 'generate'等) */
     suggestedAction?: string;
+    /** 用户是否请求执行后续任务 */
+    requestNextTask: boolean;
+
 }
 
 /**
@@ -21,7 +24,8 @@ export const exampleInput: UserIntent = {
     intentDescription: "User wants to improve the efficiency of a function through refactoring",
     isContextRelevant: true,
     confidence: 0.9,
-    suggestedAction: "refactor"
+    suggestedAction: "refactor",
+    requestNextTask: true
 };
 
 
@@ -53,7 +57,8 @@ export function generateIntentAnalysisPrompt(userInput: string, contextText: str
         "intentDescription": string,
         "isContextRelevant": boolean,
         "confidence": number,
-        "suggestedAction"?: string
+        "suggestedAction"?: string,
+        "rquestNextTask": boolean
     }`;
 }
 
