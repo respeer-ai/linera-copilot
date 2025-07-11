@@ -1,6 +1,6 @@
 <template>
   <q-input v-model="message" type="textarea" outlined rounded dark autogrow :max-rows="6"
-    style="max-height: 200px;" @keydown.enter.prevent="sendMessage" aria-placeholder="Type your task here...">
+    style="max-height: 200px;" @keydown.enter.prevent="sendMessage" placeholder="Type your task here...">
     <template v-slot:append>
       <q-btn round dense flat icon="send" @click="sendMessage" class="send-button" />
     </template>
