@@ -19,7 +19,7 @@
     </div>
 
     <div v-else :style='{height: bodyHeight}'>
-      <MessageList />
+      <MessageList :messages="messages" />
     </div>
 
     <div class="q-my-sm q-mx-md fixed-bottom q-pa-sm">
@@ -29,8 +29,9 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
+import type { Message } from '../message/Message';
 
 import MessageInput from '../input/MessageInput.vue';
 import MessageList from '../message/MessageList.vue';
@@ -60,13 +61,19 @@ const cards = ref([
 
 const bodyHeight = ref('0px')
 const chatting = ref(false)
+const messages = ref([] as Message[])
 
-const onMessageInputResize = (size) => {
+const onMessageInputResize = (size: { height: number; }) => {
   bodyHeight.value = `${window.innerHeight - size.height - 48}px`
 }
 
-const onActionCardClick = (card) => {
+const onActionCardClick = (card: { title: any; subtitle: any; }) => {
   chatting.value = true
+  const prompt = `Break down the task "${card.title}" into clear steps for a language model to follow.\nTask: ${card.title}\nSubtitle: ${card.subtitle}\nSteps:`;
+  messages.value.push({
+    sender: 'user',
+    content: prompt
+  });
 }
 
 </script>
