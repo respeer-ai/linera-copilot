@@ -81,10 +81,14 @@ const copyMessage = (content: string) => {
 
 .user-message {
   justify-content: flex-end;
+  margin-bottom: 16px;
+  margin-top: 16px;
 }
 
 .llm-message {
   justify-content: flex-start;
+  margin-bottom: 16px;
+  margin-top: 16px;
 }
 
 .user-message-content {
@@ -98,5 +102,14 @@ const copyMessage = (content: string) => {
 :deep(.markdown-body) {
   background-color: transparent;
   color: inherit;
+}
+
+.markdown-body .highlight pre, .markdown-body pre {
+  color: #f6f8fa;
+  background-color: #1f2328;
+}
+
+.markdown-body table tr, tr:nth-child(2n)  {
+  background-color: #1f2328;
 }
 </style>
