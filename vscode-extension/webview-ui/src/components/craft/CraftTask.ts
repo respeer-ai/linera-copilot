@@ -1,4 +1,4 @@
-import { requestToolCallsStream, type LLMResponse, type ToolCall } from "../../../../src/llm";
+import { requestToolCallsStream, type LLMResponse, type ToolCall } from "../../llm";
 
 export interface FileOperation {
   type: 'create' | 'modify' | 'delete' | 'move';

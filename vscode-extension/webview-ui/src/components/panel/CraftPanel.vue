@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { Message } from '../message/Message';
-import { requestLLMResponse, streamLLMResponse, type LLMResponse } from '../../../../src/llm';
+import { requestLLMResponse, streamLLMResponse, type LLMResponse } from '../../llm';
 import { exampleTask, projectTasksToHtml, type CraftTask } from '../craft/CraftTask';
 import { createLoadingHtml } from '../../waiting';
 import { PluginSettings } from '../../settings';

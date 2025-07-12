@@ -1,10 +1,28 @@
 import { PluginSettings } from '../settings';
 
-// LLM API response structure
-export interface LLMResponse {
-  text: string;       // Processed text chunk
-  isComplete: boolean; // Whether the response is complete
+export interface ToolCall {
+  name: string;
+  args: Record<string, any>;
+  text: string; // Optional, for human-readable description
 }
+
+// LLM API response structure
+export type LLMResponse =
+  | {
+      type: 'text';
+      text: string;
+      isComplete: boolean;
+    }
+  | {
+      type: 'tool_call';
+      toolCalls: ToolCall[];
+      isComplete: boolean;
+    }
+  | {
+      type: 'error';
+      text: string;
+      isComplete: boolean;
+    };
 
 /**
  * Makes a single request to LLM API and returns the response
@@ -123,7 +141,7 @@ export async function* streamLLMResponse(personality: string, prompt: string): A
       if (done) {
         // Final chunk - mark as complete
         if (buffer) {
-          yield { text: buffer, isComplete: true };
+          yield { type: 'text', text: buffer, isComplete: true };
         }
         break;
       }
@@ -143,14 +161,14 @@ export async function* streamLLMResponse(personality: string, prompt: string): A
             const jsonStr = line.substring(5).trim();
             if (jsonStr === '[DONE]') {
               // Final chunk - mark as complete
-              yield { text: '', isComplete: true };
+              yield { type: 'text', text: '', isComplete: true };
               break;
             }
             const data = JSON.parse(jsonStr);
             if (data.choices && data.choices.length > 0 && data.choices[0].delta && data.choices[0].delta.content) {
               const content = data.choices[0].delta.content;
               if (content) {
-                yield { text: content, isComplete: false };
+                yield { type: 'text', text: content, isComplete: false };
               }
             }
           } catch (e) {
@@ -162,6 +180,131 @@ export async function* streamLLMResponse(personality: string, prompt: string): A
   } catch (error) {
     console.error('Error during LLM streaming:', error);
     throw error;
+  }
+}
+
+export async function* requestToolCallsStream(
+  prompt: string
+): AsyncGenerator<LLMResponse, void, unknown> {
+  const apiUrl = PluginSettings.getModelUrl();
+  const apiKey = PluginSettings.getApiToken();
+  const modelName = PluginSettings.getModelName();
+
+  if (!apiUrl || !apiKey) {
+    throw new Error("LLM API configuration is missing");
+  }
+
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: modelName,
+      messages: [
+        {
+          role: "system",
+          content: `
+First, output a message for the user describing what you are going to do.
+Then, in a separate line starting with "TOOL_CALL:", output the JSON array of tool calls.
+Do not mix them together.
+
+Example:
+
+I will now install Linera SDK version v1.1.0 for you.
+
+TOOL_CALL:
+[
+  {
+    "name": "installLineraSdk",
+    "args": { "version": "v1.1.0", "withExamples": false },
+    "text": "I will now install Linera SDK version v1.1.0 for you."
+  }
+]
+`.trim(),
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      stream: true,
+    }),
+  });
+
+  if (!response.ok) {
+    yield {
+      type: "error",
+      text: `LLM API request failed: ${response.statusText}`,
+      isComplete: true,
+    };
+    return;
+  }
+
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let collectingToolCall = false;
+  let toolCallBuffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value);
+    buffer += chunk;
+
+    if (!collectingToolCall) {
+      const toolCallIndex = buffer.indexOf("TOOL_CALL:");
+      if (toolCallIndex !== -1) {
+        const textPart = buffer.slice(0, toolCallIndex);
+        if (textPart.trim()) {
+          yield {
+            type: "text",
+            text: textPart.trim(),
+            isComplete: false,
+          };
+        }
+        collectingToolCall = true;
+        toolCallBuffer += buffer.slice(toolCallIndex + "TOOL_CALL:".length);
+        buffer = "";
+      } else {
+        if (buffer.trim()) {
+          yield {
+            type: "text",
+            text: buffer,
+            isComplete: false,
+          };
+          buffer = "";
+        }
+      }
+    } else {
+      toolCallBuffer += buffer;
+      buffer = "";
+    }
+  }
+
+  if (toolCallBuffer.trim()) {
+    try {
+      const toolCalls: ToolCall[] = JSON.parse(toolCallBuffer.trim());
+      yield {
+        type: "tool_call",
+        toolCalls,
+        isComplete: true,
+      };
+    } catch (e) {
+      yield {
+        type: "error",
+        text: "Failed to parse tool calls from LLM response",
+        isComplete: true,
+      };
+    }
+  } else {
+    yield {
+      type: "text",
+      text: "",
+      isComplete: true,
+    };
   }
 }
 

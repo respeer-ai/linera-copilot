@@ -1,4 +1,4 @@
-import type { LLMResponse } from "../../../../src/llm";
+import type { LLMResponse } from "../../llm";
 import { executeSubTask, type CraftTask, type SubTask } from "./CraftTask";
 
 export class ProjectTaskManager {

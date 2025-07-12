@@ -9,7 +9,7 @@ interface MessagePayload<T = any> {
   error?: string;
 }
 
-async function handleGetSettings(): Promise<MessagePayload<Record<string, any>>> {
+function handleGetSettings(): MessagePayload<Record<string, any>> {
   const settings = PluginSettings.getAllSettings();
   return {
     command: 'getSettingsResponse',
@@ -17,6 +17,17 @@ async function handleGetSettings(): Promise<MessagePayload<Record<string, any>>>
     data: settings,
   };
 }
+
+async function handleSaveSettings(payload: MessagePayload<Record<string, any>>): Promise<MessagePayload<Record<string, any>>> {
+  const settings = PluginSettings.getAllSettings();
+  await PluginSettings.saveAllSettings(payload.updated as Record<string, string>);
+  return {
+    command: 'saveSettingsResponse',
+    success: true,
+    updated: settings,
+  };
+}
+
 
 async function handleGetSingleSetting(
   commandResponse: string,
@@ -58,7 +69,11 @@ export const onMessage = async (webview: vscode.Webview, message: any) => {
   try {
     switch (message.command) {
       case 'getSettings':
-        payload = await handleGetSettings();
+        payload = handleGetSettings();
+        break;
+
+      case 'saveSettings':
+        payload = await handleSaveSettings(message);
         break;
 
       case 'getSdkVersion':

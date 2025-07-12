@@ -46,10 +46,12 @@ function sendCommand<T = any>(command: string, value?: any): Promise<T> {
   });
 }
 
-// 7️⃣ 导出具体的设置函数（封装到PluginSettings类）
-export class PluginSettings {
+// 7️⃣ 导出具体的设置函数（封装到PluginSettingCli类）
+export class PluginSettingCli {
   static getAllSettings = () =>
     sendCommand<Record<string, string>>("getSettings");
+  static saveAllSettings = (settings: Record<string, string>) =>
+    sendCommand<Record<string, string>>("saveSettings", settings);
   static getSdkVersion = () => sendCommand<string>("getSdkVersion");
   static setSdkVersion = (version: string) =>
     sendCommand<void>("setSdkVersion", version);

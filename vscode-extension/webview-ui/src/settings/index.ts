@@ -1,3 +1,5 @@
+import { PluginSettingCli } from "./cli";
+
 /**
  * VSCode 插件通用设置管理类
  * 使用 localStorage 存储插件配置
@@ -18,6 +20,7 @@ export class PluginSettings {
      */
     public static saveAllSettings(settings: Record<string, string>): void {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(settings));
+        PluginSettingCli.saveAllSettings(settings);
     }
 
     /**
@@ -32,6 +35,7 @@ export class PluginSettings {
      */
     public static setSdkVersion(version: string): void {
         this.setSetting('sdkVersion', version);
+        PluginSettingCli.setSdkVersion(version);
     }
 
     /**
@@ -46,6 +50,7 @@ export class PluginSettings {
      */
     public static setModelUrl(url: string): void {
         this.setSetting('modelUrl', url);
+        PluginSettingCli.setModelUrl(url);
     }
 
     /**
@@ -60,6 +65,7 @@ export class PluginSettings {
      */
     public static setApiToken(token: string): void {
         this.setSetting('apiToken', token);
+        PluginSettingCli.setApiToken(token);
     }
 
     /**
@@ -74,6 +80,7 @@ export class PluginSettings {
      */
     public static setModelName(name: string): void {
         this.setSetting('modelName', name);
+        PluginSettingCli.setModelName(name);
     }
 
     /**
@@ -88,6 +95,7 @@ export class PluginSettings {
      */
     public static setProjectRoot(root: string): void {
         this.setSetting('projectRoot', root);
+        PluginSettingCli.setProjectRoot(root);
     }
 
     /**
