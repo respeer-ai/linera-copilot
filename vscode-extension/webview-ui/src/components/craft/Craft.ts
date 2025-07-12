@@ -1,4 +1,4 @@
-import type { LLMResponse } from "../../llm";
+import type { LLMResponse } from "../../../../src/llm";
 import { executeSubTask, type CraftTask, type SubTask } from "./CraftTask";
 
 export class ProjectTaskManager {
@@ -18,6 +18,18 @@ export class ProjectTaskManager {
       }
     }
   }
+
+  /**
+   * 设置当前任务的 toolCalls
+   * @param toolCalls 要设置的 toolCalls 数组
+   */
+  public setCurrentToolCalls(toolCalls: any[]): void {
+    const currentTask = this.getNextTaskInfo();
+    if (currentTask) {
+      currentTask.toolCalls = toolCalls;
+    }
+  }
+  
 
   /**
    * 执行下一个子任务，返回 LLM 响应流

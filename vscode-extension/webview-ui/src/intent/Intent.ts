@@ -1,4 +1,4 @@
-import { requestLLMResponse } from '../llm/index';
+import { requestLLMResponse } from '../../../src/llm/index';
 
 export interface UserIntent {
     /** 用户输入的原始文本 */

@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { Message } from '../message/Message';
-import { requestLLMResponse, streamLLMResponse, type LLMResponse } from '../../llm';
+import { requestLLMResponse, streamLLMResponse, type LLMResponse } from '../../../../src/llm';
 import { exampleTask, projectTasksToHtml, type CraftTask } from '../craft/CraftTask';
 import { createLoadingHtml } from '../../waiting';
 import { PluginSettings } from '../../settings';
@@ -86,20 +86,26 @@ const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse
     } else {
       if (messageMode.value === 'New') {
         messageMode.value = 'Append'
-        messages.value.push({
-          sender: 'llm',
-          content: response.text
-        })
+        if (response.type === 'text') {
+          messages.value.push({
+            sender: 'llm',
+            content: response.text
+          })
+        }
       } else if (messageMode.value === 'Replace') {
-        messages.value[messages.value.length - 1].content = response.text
+        if (response.type === 'text') {
+          messages.value[messages.value.length - 1].content = response.text
+        }
         messageMode.value = 'Append';
       } else {
-        const index = messages.value.length - 1
-        const message = {
-          ...messages.value[index],
-          content: messages.value[index].content + response.text
+        if (response.type === 'text') {
+          const index = messages.value.length - 1
+          const message = {
+            ...messages.value[index],
+            content: messages.value[index].content + response.text
+          }
+          messages.value.splice(index, 1, message);
         }
-        messages.value.splice(index, 1, message);
       }
     }
   }

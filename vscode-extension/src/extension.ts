@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { onMessage } from './webview/messageDispatcher';
 
 class LineraCopilotViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'linera-copilot-webview';
@@ -11,22 +12,59 @@ class LineraCopilotViewProvider implements vscode.WebviewViewProvider {
         _context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken,
     ) {
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [
-                vscode.Uri.joinPath(this._extensionContext.extensionUri, 'webview-ui', 'dist'),
-                vscode.Uri.joinPath(this._extensionContext.extensionUri, 'webview-ui', 'dist', 'assets')
-            ]
-        };
+      webviewView.webview.options = {
+        enableScripts: true,
+        localResourceRoots: [
+          vscode.Uri.joinPath(
+            this._extensionContext.extensionUri,
+            "webview-ui",
+            "dist"
+          ),
+          vscode.Uri.joinPath(
+            this._extensionContext.extensionUri,
+            "webview-ui",
+            "dist",
+            "assets"
+          ),
+        ],
+      };
 
-        const manifest = require(path.join(this._extensionContext.extensionPath, 'webview-ui/dist/.vite/manifest.json'));
-        const mainScript = manifest['index.html']['file'];
-        const cssFiles = manifest['index.html']['css'] || [];
+      const manifest = require(path.join(
+        this._extensionContext.extensionPath,
+        "webview-ui/dist/.vite/manifest.json"
+      ));
+      const mainScript = manifest["index.html"]["file"];
+      const cssFiles = manifest["index.html"]["css"] || [];
 
-        const scriptUri = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionContext.extensionUri, 'webview-ui', 'dist', mainScript));
-        const cssUris = cssFiles.map((file: string) => webviewView.webview.asWebviewUri(vscode.Uri.joinPath(this._extensionContext.extensionUri, 'webview-ui', 'dist', file)));
+      const scriptUri = webviewView.webview.asWebviewUri(
+        vscode.Uri.joinPath(
+          this._extensionContext.extensionUri,
+          "webview-ui",
+          "dist",
+          mainScript
+        )
+      );
+      const cssUris = cssFiles.map((file: string) =>
+        webviewView.webview.asWebviewUri(
+          vscode.Uri.joinPath(
+            this._extensionContext.extensionUri,
+            "webview-ui",
+            "dist",
+            file
+          )
+        )
+      );
 
-        webviewView.webview.html = this.getWebviewContent(scriptUri.toString(), cssUris.map((uri: vscode.Uri) => uri.toString()));
+      webviewView.webview.html = this.getWebviewContent(
+        scriptUri.toString(),
+        cssUris.map((uri: vscode.Uri) => uri.toString())
+      );
+
+      webviewView.webview.onDidReceiveMessage(
+        (message) => onMessage(webviewView.webview, message),
+        undefined,
+        this._extensionContext.subscriptions
+      );
     }
 
     private getWebviewContent(scriptUri: string, cssUris: string[]): string {

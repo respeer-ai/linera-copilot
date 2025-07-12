@@ -1,4 +1,4 @@
-import { streamLLMResponse, type LLMResponse } from "../../llm";
+import { requestToolCallsStream, type LLMResponse, type ToolCall } from "../../../../src/llm";
 
 export interface FileOperation {
   type: 'create' | 'modify' | 'delete' | 'move';
@@ -14,6 +14,7 @@ export interface SubTask {
   prompt: string;
   role: string,
   subTasks?: SubTask[]; // Allow nested subtasks
+  toolCalls?: ToolCall[]; // Optional tool calls for LLM
 }
 
 export interface CraftTask {
@@ -99,8 +100,6 @@ export const exampleTask: CraftTask = {
 export function projectTasksToHtml(tasks: (CraftTask | SubTask)[]): string {
   if (!tasks || tasks.length === 0) return '<div>No tasks available</div>';
 
-  
-
   const renderTasks = (tasks: (CraftTask | SubTask)[], level = 0): string => {
     if (!tasks || tasks.length === 0) return '';
     
@@ -136,9 +135,12 @@ export function projectTasksToHtml(tasks: (CraftTask | SubTask)[]): string {
 // - src/auth/authService.ts
 // - src/api/products.ts
 export async function* executeSubTask(subTask: SubTask): AsyncGenerator<LLMResponse, void, unknown> {
-  const llmStream = streamLLMResponse(subTask.role, subTask.prompt);
+  const llmStream = requestToolCallsStream(subTask.prompt);
   
   for await (const chunk of llmStream) {
+    if (chunk.type === 'tool_call') {
+      subTask.toolCalls = chunk.toolCalls;  // 更新子任务的 toolCalls
+    }
     yield chunk;  // 持续返回
   }
 }
