@@ -32,8 +32,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { Message } from '../message/Message';
-import { requestLLMResponse, streamLLMResponse, type LLMResponse } from '../../llm';
-import { exampleTask, projectTasksToHtml, type CraftTask } from '../craft/CraftTask';
+import { requestLLMResponse, streamLLMResponse, type LLMResponse, type ToolCall } from '../../llm';
+import { exampleTask, projectTasksToHtml, type CraftTask, type SubTask } from '../craft/CraftTask';
 import { createLoadingHtml } from '../../waiting';
 import { PluginSettings } from '../../settings';
 import { analyzeUserIntent, type UserIntent } from '../../intent';
@@ -41,6 +41,7 @@ import { ProjectTaskManager } from '../craft/Craft';
 
 import MessageInput from '../input/MessageInput.vue';
 import MessageList from '../message/MessageList.vue';
+import { BackendCli } from '../../backend';
 
 const cards = ref([
   {
@@ -121,6 +122,20 @@ const executeIntent = async (intent: UserIntent) => {
   }
 }
 
+const executeToolCall = async (toolCall: ToolCall) => {
+  BackendCli.executeToolCall(toolCall)
+}
+
+const executeToolCalls = async (task: SubTask) => {
+  for (const toolCall of task.toolCalls || []) {
+    try {
+      executeToolCall(toolCall)
+    } catch (error) {
+      messages.value[messages.value.length - 1].content = `${error}`
+    }
+  }
+}
+
 const executeNextTask = async () => {
   const task = projectTaskManager.value?.getNextTaskInfo()
   if (!task) {
@@ -137,6 +152,10 @@ const executeNextTask = async () => {
     await onStreamLLMResponse(responseGenerator, false)
   } catch (error) {
     messages.value[messages.value.length - 1].content = `${error}`
+  }
+
+  if (task.toolCalls?.length) {
+    executeToolCalls(task)
   }
 }
 

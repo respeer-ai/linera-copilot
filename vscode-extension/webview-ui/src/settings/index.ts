@@ -1,4 +1,4 @@
-import { PluginSettingCli } from "./cli";
+import { BackendCli } from "../backend";
 
 /**
  * VSCode 插件通用设置管理类
@@ -20,7 +20,7 @@ export class PluginSettings {
      */
     public static saveAllSettings(settings: Record<string, string>): void {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(settings));
-        PluginSettingCli.saveAllSettings(settings);
+        BackendCli.saveAllSettings(settings);
     }
 
     /**
@@ -35,7 +35,7 @@ export class PluginSettings {
      */
     public static setSdkVersion(version: string): void {
         this.setSetting('sdkVersion', version);
-        PluginSettingCli.setSdkVersion(version);
+        BackendCli.setSdkVersion(version);
     }
 
     /**
@@ -50,7 +50,7 @@ export class PluginSettings {
      */
     public static setModelUrl(url: string): void {
         this.setSetting('modelUrl', url);
-        PluginSettingCli.setModelUrl(url);
+        BackendCli.setModelUrl(url);
     }
 
     /**
@@ -65,7 +65,7 @@ export class PluginSettings {
      */
     public static setApiToken(token: string): void {
         this.setSetting('apiToken', token);
-        PluginSettingCli.setApiToken(token);
+        BackendCli.setApiToken(token);
     }
 
     /**
@@ -80,7 +80,7 @@ export class PluginSettings {
      */
     public static setModelName(name: string): void {
         this.setSetting('modelName', name);
-        PluginSettingCli.setModelName(name);
+        BackendCli.setModelName(name);
     }
 
     /**
@@ -95,7 +95,7 @@ export class PluginSettings {
      */
     public static setProjectRoot(root: string): void {
         this.setSetting('projectRoot', root);
-        PluginSettingCli.setProjectRoot(root);
+        BackendCli.setProjectRoot(root);
     }
 
     /**

@@ -1,3 +1,5 @@
+import type { ToolCall } from "../llm";
+
 // 1️⃣ 声明 VSCode API
 declare function acquireVsCodeApi(): {
   postMessage: (message: any) => void;
@@ -46,8 +48,8 @@ function sendCommand<T = any>(command: string, value?: any): Promise<T> {
   });
 }
 
-// 7️⃣ 导出具体的设置函数（封装到PluginSettingCli类）
-export class PluginSettingCli {
+// 7️⃣ 导出具体的设置函数（封装到BackendCli类）
+export class BackendCli {
   static getAllSettings = () =>
     sendCommand<Record<string, string>>("getSettings");
   static saveAllSettings = (settings: Record<string, string>) =>
@@ -66,4 +68,6 @@ export class PluginSettingCli {
   static getProjectRoot = () => sendCommand<string>("getProjectRoot");
   static setProjectRoot = (root: string) =>
     sendCommand<void>("setProjectRoot", root);
+  static executeToolCall = (toolCall: ToolCall) =>
+    sendCommand<void>("executeToolCall", toolCall);
 }

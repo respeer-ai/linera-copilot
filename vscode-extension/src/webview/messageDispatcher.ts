@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { PluginSettings } from '../settings';
+import { executeToolCall } from '../tools';
 
 interface MessagePayload<T = any> {
   command: string;
@@ -74,6 +75,14 @@ export const onMessage = async (webview: vscode.Webview, message: any) => {
 
       case 'saveSettings':
         payload = await handleSaveSettings(message);
+        break;
+
+      case 'executeToolCall':
+        await executeToolCall(message.data)
+        payload = {
+          command: 'executeToolCallResponse',
+          success: true
+        }
         break;
 
       case 'getSdkVersion':
