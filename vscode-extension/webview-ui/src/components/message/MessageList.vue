@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRef, watch, nextTick } from 'vue';
+import { ref, toRef, watch, nextTick, onMounted } from 'vue';
 import type { Message } from './Message';
 import { NotifyManager } from '../../notify'
 import { QScrollArea, useQuasar } from 'quasar';
@@ -90,6 +90,29 @@ const copyMessage = (content: string) => {
   navigator.clipboard.writeText(content);
   NotifyManager.showSuccess($q, 'Copied to clipboard')
 };
+
+onMounted(() => {
+  const style = document.createElement("style");
+  style.textContent = `
+    .markdown-body {
+      overflow-x: hidden;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .markdown-body pre {
+      display: block;
+      max-width: 100% !important;
+      overflow-x: auto !important;
+      white-space: pre !important;
+      box-sizing: border-box !important;
+      padding: 1em;
+      margin: 0.5em 0;
+    }
+  `;
+  document.head.appendChild(style);
+});
+
 </script>
 
 <style scoped>
@@ -123,5 +146,9 @@ const copyMessage = (content: string) => {
 
 .markdown-body p {
   font-size: 14px !important;
+}
+
+.markdown-body pre>code {
+  white-space: none !important;
 }
 </style>
