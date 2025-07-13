@@ -42,6 +42,8 @@ import { ProjectTaskManager } from '../craft/Craft';
 import MessageInput from '../input/MessageInput.vue';
 import MessageList from '../message/MessageList.vue';
 import { BackendCli } from '../../backend';
+import { generateToolCallRunningHtml } from '../../tools';
+import { generateErrorHtml } from '../../error';
 
 const cards = ref([
   {
@@ -81,6 +83,19 @@ const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse
   for await (const response of responseGenerator) {
     if (response.isComplete) {
       messageMode.value = 'New';
+      if (response.type === 'text') {
+        const index = messages.value.length - 1
+          const message = {
+            ...messages.value[index],
+            content: messages.value[index].content + response.text
+          }
+          messages.value.splice(index, 1, message);
+      } else if (response.type === 'error') {
+          messages.value.push({
+            sender: 'llm',
+            content: generateErrorHtml(response.text)
+          })
+        }
       if (needTaskJson) {
         await taskJsonRequest(messages.value[messages.value.length - 1].content)
       }
@@ -123,6 +138,12 @@ const executeIntent = async (intent: UserIntent) => {
 }
 
 const executeToolCall = async (toolCall: ToolCall) => {
+  messages.value.push({
+    sender: 'llm',
+    content: generateToolCallRunningHtml(toolCall)
+  })
+  messageMode.value = 'Replace';
+
   BackendCli.executeToolCall(toolCall)
 }
 
@@ -217,7 +238,7 @@ const taskJsonRequest = async (message: string) => {
   try {
     tasksJson = await requestLLMResponse(personality, message, { jsonFormat: true, isList: true }, exampleTask)
   } catch (error) {
-    messages.value[messages.value.length - 1].content = `${error}`
+    messages.value[messages.value.length - 1].content = `Failed generate project tasks: ${error}`
   }
   messageMode.value = 'Replace';
 
@@ -225,14 +246,14 @@ const taskJsonRequest = async (message: string) => {
     tasks.value = JSON.parse(tasksJson)
   } catch (error) {
     console.log(tasksJson)
-    messages.value[messages.value.length - 1].content = `${error}`
+    messages.value[messages.value.length - 1].content = `Failed parse task json: ${error}`
   }
 
   try {
     messages.value[messages.value.length - 1].content = projectTasksToHtml(tasks.value)
   } catch (error) {
     console.log(tasks.value)
-    messages.value[messages.value.length - 1].content = `${error}`
+    messages.value[messages.value.length - 1].content = `Failed generate task html: ${error}`
   }
 
   projectTaskManager.value = new ProjectTaskManager(tasks.value[0]);
@@ -243,7 +264,7 @@ const splitTaskRequest = async (prompt: string) => {
     sender: 'llm',
     content: createLoadingHtml('I\'m thinking...')
   })
-  messageMode.value = 'Replace';
+  messageMode.value = 'Append';
 
   try {
     const personality = 'You are an experienced top-tier engineer and architect who excels at breaking down tasks into manageable components.'

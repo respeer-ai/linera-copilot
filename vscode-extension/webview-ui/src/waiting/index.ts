@@ -6,29 +6,55 @@
 export function createLoadingHtml(text: string = ''): string {
     return `
         <div style="
+            width: 100%;
+            padding: 12px 16px;
+            background-color: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 20px;
             display: flex;
-            flex-direction: row;
+            justify-content: space-between;
             align-items: center;
-            color: white;
+            box-sizing: border-box;
         ">
+            <div style="margin-right: 12px;">${text}</div>
             <div style="
-                border: 4px solid rgba(255, 255, 255, 0.3);
+                width: 20px;
+                height: 20px;
                 border-radius: 50%;
-                border-top: 4px solid white;
-                width: 30px;
-                height: 30px;
-                animation: spin 1s linear infinite;
-                margin-right: 10px;
+                position: relative;
+                animation: rotate 1s linear infinite;
             "></div>
-            <div>${text}</div>
         </div>
 
         <style>
-            @keyframes spin {
+            @keyframes rotate {
                 0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            div[style*="width: 20px;"]::before,
+            div[style*="width: 20px;"]::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+            }
+            div[style*="width: 20px;"]::before {
+                clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+                animation: clip-rotate 1s linear infinite;
+            }
+            div[style*="width: 20px;"]::after {
+                clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+                animation: clip-rotate-reverse 1s linear infinite;
+            }
+            @keyframes clip-rotate {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(180deg); }
+            }
+            @keyframes clip-rotate-reverse {
+                0% { transform: rotate(180deg); }
                 100% { transform: rotate(360deg); }
             }
         </style>

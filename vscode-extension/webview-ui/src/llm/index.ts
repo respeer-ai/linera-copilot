@@ -81,7 +81,6 @@ export async function requestLLMResponse(
   }
 
   const data = await response.json();
-  console.log(prompt, data)
   
   // Default to text content
   return (data.choices?.[0]?.message?.content as string)?.replace('```json', '').replace('```', '') || '';
@@ -194,7 +193,8 @@ export async function* requestToolCallsStream(
     throw new Error("LLM API configuration is missing");
   }
 
-  const response = await fetch(apiUrl, {
+  // ========= Phase 1: Request for user-friendly text only =========
+  const textResponse = await fetch(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -206,22 +206,8 @@ export async function* requestToolCallsStream(
         {
           role: "system",
           content: `
-First, output a message for the user describing what you are going to do.
-Then, in a separate line starting with "TOOL_CALL:", output the JSON array of tool calls.
-Do not mix them together.
-
-Example:
-
-I will now install Linera SDK version v1.1.0 for you.
-
-TOOL_CALL:
-[
-  {
-    "name": "installLineraSdk",
-    "args": { "version": "v1.1.0", "withExamples": false },
-    "text": "I will now install Linera SDK version v1.1.0 for you."
-  }
-]
+You are a programming assistant. When you respond, only describe to the user in plain text what you plan to do.
+DO NOT include any TOOL_CALL: section in this response.
 `.trim(),
         },
         {
@@ -233,76 +219,180 @@ TOOL_CALL:
     }),
   });
 
-  if (!response.ok) {
+  if (!textResponse.ok) {
     yield {
       type: "error",
-      text: `LLM API request failed: ${response.statusText}`,
+      text: `LLM text phase request failed: ${textResponse.statusText}`,
       isComplete: true,
     };
     return;
   }
 
-  const reader = response.body!.getReader();
+  const textReader = textResponse.body!.getReader();
   const decoder = new TextDecoder();
-  let buffer = "";
-  let collectingToolCall = false;
-  let toolCallBuffer = "";
 
   while (true) {
-    const { done, value } = await reader.read();
+    const { done, value } = await textReader.read();
     if (done) break;
     const chunk = decoder.decode(value);
-    buffer += chunk;
+    const lines = chunk.split("\n");
 
-    if (!collectingToolCall) {
-      const toolCallIndex = buffer.indexOf("TOOL_CALL:");
-      if (toolCallIndex !== -1) {
-        const textPart = buffer.slice(0, toolCallIndex);
-        if (textPart.trim()) {
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+
+      const dataStr = trimmed.replace("data:", "").trim();
+      if (dataStr === "[DONE]") continue;
+
+      try {
+        const parsed = JSON.parse(dataStr);
+        const content = parsed?.choices?.[0]?.delta?.content;
+        if (typeof content === "string" && content.trim()) {
           yield {
             type: "text",
-            text: textPart.trim(),
+            text: content,
             isComplete: false,
           };
         }
-        collectingToolCall = true;
-        toolCallBuffer += buffer.slice(toolCallIndex + "TOOL_CALL:".length);
-        buffer = "";
-      } else {
-        if (buffer.trim()) {
-          yield {
-            type: "text",
-            text: buffer,
-            isComplete: false,
-          };
-          buffer = "";
-        }
+      } catch (e) {
+        console.warn("Failed to parse text stream:", e);
       }
-    } else {
-      toolCallBuffer += buffer;
-      buffer = "";
     }
   }
 
-  if (toolCallBuffer.trim()) {
-    try {
-      const toolCalls: ToolCall[] = JSON.parse(toolCallBuffer.trim());
+  // ========= Phase 2: Request TOOL_CALLs only =========
+  const toolResponse = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: modelName,
+      messages: [
+        {
+          role: "system",
+          content: `
+Respond ONLY with the TOOL_CALL JSON array, no explanation.
+Format:
+[
+  {
+    "name": "install_linera_sdk",
+    "args": { "version": "v1.1.0", "withExamples": false },
+    "text": "I will now install Linera SDK version v1.1.0 for you."
+  }
+]
+`.trim(),
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      stream: false,
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "install_rust",
+            description: "Installs Rust development toolchain with the specified version and release channel. Recommended versions for Linera SDK are typically stable or nightly channels with recent versions like 1.70.0 or newer.",
+            parameters: {
+              type: "object",
+              properties: {
+                version: {
+                  type: "string",
+                  description: "Cargo version to install, e.g. 1.70.0"
+                },
+                channel: {
+                  type: "string",
+                  description: "Rust release channel to use, e.g. stable, beta, nightly",
+                  enum: ["stable", "beta", "nightly"]
+                }
+              },
+              required: ["version"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "install_protoc",
+            description: "Installs Protocol Buffers compiler (protoc) with the specified version.",
+            parameters: {
+              type: "object",
+              properties: {
+                version: {
+                  type: "string",
+                  description: "Version of protoc to install, e.g. 3.21.7"
+                },
+                platform: {
+                  type: "string",
+                  description: "Target platform for installation, e.g. linux, windows, macos",
+                  enum: ["linux", "windows", "macos"]
+                }
+              },
+              required: ["version", "platform"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "install_linera_sdk",
+            description: "Installs the specified version of the Linera SDK.",
+            parameters: {
+              type: "object",
+              properties: {
+                version: {
+                  type: "string",
+                  description: "Linera SDK version number, e.g. v1.1.0"
+                },
+                withExamples: {
+                  type: "boolean",
+                  description: "Whether to install example projects alongside the SDK",
+                  default: false
+                }
+              },
+              required: ["version"]
+            }
+          }
+        }
+      ],
+      toolCall: "auto"
+    }),
+  });
+
+  if (!toolResponse.ok) {
+    yield {
+      type: "error",
+      text: `LLM tool call request failed: ${toolResponse.statusText}`,
+      isComplete: true,
+    };
+    return;
+  }
+
+  const data = await toolResponse.json();
+  const content = data?.choices?.[0]?.delta?.content;
+
+  try {
+    if (typeof content === "string" && content.trim()) {
+      const toolCalls: ToolCall[] = JSON.parse(content);
       yield {
         type: "tool_call",
         toolCalls,
         isComplete: true,
       };
-    } catch (e) {
+    } else { 
       yield {
         type: "error",
-        text: "Failed to parse tool calls from LLM response",
+        text: "LLM response did not contain any tool calls",
         isComplete: true,
       };
     }
-  } else {
+  } catch (e) {
     yield {
-      type: "text",
-      text: "",
+      type: "error",
+      text: content,
       isComplete: true,
     };
   }
