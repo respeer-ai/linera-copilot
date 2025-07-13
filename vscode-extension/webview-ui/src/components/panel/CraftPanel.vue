@@ -264,7 +264,7 @@ const splitTaskRequest = async (prompt: string) => {
     sender: 'llm',
     content: createLoadingHtml('I\'m thinking...')
   })
-  messageMode.value = 'Append';
+  messageMode.value = 'Replace';
 
   try {
     const personality = 'You are an experienced top-tier engineer and architect who excels at breaking down tasks into manageable components.'

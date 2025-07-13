@@ -125,6 +125,8 @@ const copyMessage = (content: string) => {
 :deep(.markdown-body .highlight pre, .markdown-body pre) {
   color: #f6f8fa !important;
   background-color: #1f2328 !important;
+  white-space: pre-wrap !important;
+  max-width: 100%;
 }
 
 :deep(.markdown-body table tr),
@@ -134,5 +136,11 @@ const copyMessage = (content: string) => {
 
 :deep(.markdown-body p) {
   font-size: 14px !important;
+}
+
+:deep(.markdown-body table) {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
 }
 </style>

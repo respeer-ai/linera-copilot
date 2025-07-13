@@ -372,17 +372,26 @@ Format:
   }
 
   const data = await toolResponse.json();
-  const content = data?.choices?.[0]?.delta?.content;
+  const content = data?.choices?.[0]?.message?.content;
+  const _toolCalls = data?.choices?.[0]?.message?.toolCalls;
+
+  console.log(data, content, _toolCalls)
 
   try {
-    if (typeof content === "string" && content.trim()) {
-      const toolCalls: ToolCall[] = JSON.parse(content);
+    if (_toolCalls?.length > 0) {
+      const toolCalls: ToolCall[] = JSON.parse(JSON.stringify(_toolCalls));
       yield {
         type: "tool_call",
         toolCalls,
         isComplete: true,
       };
-    } else { 
+    } else if (typeof content === "string" && content.trim()) {
+      yield {
+        type: "error",
+        text: content,
+        isComplete: true,
+      };
+    } else {
       yield {
         type: "error",
         text: "LLM response did not contain any tool calls",
@@ -392,7 +401,7 @@ Format:
   } catch (e) {
     yield {
       type: "error",
-      text: content,
+      text: `Failed to parse tool call stream: ${e}`,
       isComplete: true,
     };
   }
