@@ -67,6 +67,8 @@ async function handleSetSingleSetting(
 export const onMessage = async (webview: vscode.Webview, message: any) => {
   let payload: MessagePayload;
 
+  console.log('Received message:', message);
+
   try {
     switch (message.command) {
       case 'getSettings':
@@ -78,6 +80,7 @@ export const onMessage = async (webview: vscode.Webview, message: any) => {
         break;
 
       case 'executeToolCall':
+        console.log('Executing tool call:', message.data);
         await executeToolCall(message.data)
         payload = {
           command: 'executeToolCallResponse',

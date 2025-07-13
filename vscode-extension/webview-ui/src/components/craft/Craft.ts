@@ -29,7 +29,6 @@ export class ProjectTaskManager {
       currentTask.toolCalls = toolCalls;
     }
   }
-  
 
   /**
    * 执行下一个子任务，返回 LLM 响应流
@@ -38,6 +37,7 @@ export class ProjectTaskManager {
     while (this.taskStack.length > 0) {
       const { taskId, index } = this.taskStack[this.taskStack.length - 1];
       const task = this.taskMap.get(taskId);
+
       if (!task || !task.subTasks || index >= task.subTasks.length) {
         this.taskStack.pop();
         continue;
@@ -45,16 +45,19 @@ export class ProjectTaskManager {
 
       const subTask = task.subTasks[index];
 
+      // 如果还有子任务，先推进子任务
+      if (subTask.subTasks && subTask.subTasks.length > 0) {
+        this.taskStack.push({ taskId: subTask.id, index: 0 });
+        continue;
+      }
+
+      // 是叶子任务，就执行它
       for await (const chunk of executeSubTask(subTask)) {
         yield chunk;
       }
 
+      // 执行完后更新 index
       this.taskStack[this.taskStack.length - 1].index++;
-
-      if (subTask.subTasks && subTask.subTasks.length > 0) {
-        this.taskStack.push({ taskId: subTask.id, index: 0 });
-      }
-
       return;
     }
   }
@@ -78,17 +81,37 @@ export class ProjectTaskManager {
     }
   }
 
+  /**
+   * 获取下一个应该执行的任务信息，不修改任务状态
+   * @returns 下一个子任务或null（如果没有更多任务）
+   */
   public getNextTaskInfo(): SubTask | null {
-    while (this.taskStack.length > 0) {
-      const { taskId, index } = this.taskStack[this.taskStack.length - 1];
-      const task = this.taskMap.get(taskId);
-      if (!task || !task.subTasks || index >= task.subTasks.length) {
-        this.taskStack.pop();
-        continue;
-      }
-      return task.subTasks[index];
+  // 克隆栈副本
+  const stackCopy = [...this.taskStack];
+
+  while (stackCopy.length > 0) {
+    const { taskId, index } = stackCopy[stackCopy.length - 1];
+    const task = this.taskMap.get(taskId);
+
+    if (!task || !task.subTasks || index >= task.subTasks.length) {
+      stackCopy.pop(); // 只修改副本
+      continue;
     }
-    return null;
+
+    const subTask = task.subTasks[index];
+
+    // 如果这个 subTask 还有子任务，向下钻一层继续模拟
+    if (subTask.subTasks && subTask.subTasks.length > 0) {
+      stackCopy.push({ taskId: subTask.id, index: 0 });
+      continue;
+    }
+
+    // 找到下一个实际要执行的任务
+    return subTask;
   }
+
+  return null; // 没有更多任务
+}
+
 }
 

@@ -138,6 +138,7 @@ const executeIntent = async (intent: UserIntent) => {
 }
 
 const executeToolCall = async (toolCall: ToolCall) => {
+  console.log('WebView Executing tool call:', toolCall);
   messages.value.push({
     sender: 'llm',
     content: generateToolCallRunningHtml(toolCall)

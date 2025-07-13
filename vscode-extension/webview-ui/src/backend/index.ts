@@ -69,5 +69,5 @@ export class BackendCli {
   static setProjectRoot = (root: string) =>
     sendCommand<void>("setProjectRoot", root);
   static executeToolCall = (toolCall: ToolCall) =>
-    sendCommand<void>("executeToolCall", toolCall);
+    sendCommand<void>("executeToolCall", JSON.parse(JSON.stringify(toolCall)));
 }

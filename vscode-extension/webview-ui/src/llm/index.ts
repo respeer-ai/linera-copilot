@@ -354,7 +354,7 @@ Format:
           type: "function",
           function: {
             name: "install_rust",
-            description: "Installs Rust development toolchain with the specified version and release channel. Recommended versions for Linera SDK are typically stable or nightly channels with recent versions like 1.70.0 or newer.",
+            description: "Installs the Rust programming language and its development toolchain, including rustup, cargo, and rustc. This tool can be used to install or upgrade Rust, set a specific version, or switch between stable and nightly channels. Common use cases include setting up Rust for new environments, preparing for Linera SDK development, or recovering missing Rust installations.",
             parameters: {
               type: "object",
               properties: {
@@ -439,6 +439,14 @@ Format:
   try {
     if (_toolCalls?.length > 0) {
       const toolCalls: ToolCall[] = JSON.parse(JSON.stringify(_toolCalls));
+      toolCalls.forEach(call => {
+        if (!call.text?.trim()) {
+          call.text = content;
+        }
+        if (!call.text?.trim()) {
+          call.text = `Executing tool call: ${call.name}`;
+        }
+      });
       yield {
         type: "tool_call",
         toolCalls,
