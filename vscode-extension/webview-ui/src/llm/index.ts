@@ -21,6 +21,7 @@ export type LLMResponse =
   | {
       type: 'error';
       text: string;
+      taskPrompt: string;
       isComplete: boolean;
     };
 
@@ -230,6 +231,7 @@ DO NOT include any TOOL_CALL section or JSON output at this stage.
     yield {
       type: "error",
       text: `LLM text phase request failed: ${textResponse.statusText}`,
+      taskPrompt: prompt,
       isComplete: true,
     };
     return;
@@ -304,6 +306,7 @@ TOOL_CALL_REQUIRED: false
     yield {
       type: "error",
       text: `LLM tool call intent detection failed: ${intentResponse.statusText}`,
+      taskPrompt: prompt,
       isComplete: true,
     };
     return;
@@ -423,6 +426,7 @@ Format:
     yield {
       type: "error",
       text: `LLM tool call request failed: ${toolResponse.statusText}`,
+      taskPrompt: prompt,
       isComplete: true,
     };
     return;
@@ -431,8 +435,6 @@ Format:
   const data = await toolResponse.json();
   const content = data?.choices?.[0]?.message?.content;
   const _toolCalls = data?.choices?.[0]?.message?.tool_calls;
-
-  console.log(data, content, _toolCalls, _toolCalls?.length)
 
   try {
     if (_toolCalls?.length > 0) {
@@ -457,6 +459,7 @@ Format:
         yield {
           type: "error",
           text: content,
+          taskPrompt: prompt,
           isComplete: true,
         };
       }
@@ -464,6 +467,7 @@ Format:
       yield {
         type: "error",
         text: "LLM response did not contain any tool calls",
+        taskPrompt: prompt,
         isComplete: true,
       };
     }
@@ -471,6 +475,7 @@ Format:
     yield {
       type: "error",
       text: `Failed to parse tool call stream: ${e}`,
+      taskPrompt: prompt,
       isComplete: true,
     };
   }

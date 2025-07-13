@@ -149,6 +149,6 @@ onMounted(() => {
 }
 
 .markdown-body pre>code {
-  white-space: none !important;
+  white-space: break-spaces !important;
 }
 </style>
