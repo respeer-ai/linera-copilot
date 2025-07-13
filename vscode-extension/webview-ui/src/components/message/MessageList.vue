@@ -117,30 +117,11 @@ const copyMessage = (content: string) => {
 }
 
 /* 确保 markdown-body 类的样式正确应用 */
-:deep(.markdown-body) {
+.markdown-body {
   background-color: transparent;
-  color: inherit;
 }
 
-:deep(.markdown-body .highlight pre, .markdown-body pre) {
-  color: #f6f8fa !important;
-  background-color: #1f2328 !important;
-  white-space: pre-wrap !important;
-  max-width: 100%;
-}
-
-:deep(.markdown-body table tr),
-:deep(.markdown-body table tr:nth-child(2n)) {
-  background-color: #1f2328 !important;
-}
-
-:deep(.markdown-body p) {
+.markdown-body p {
   font-size: 14px !important;
-}
-
-:deep(.markdown-body table) {
-  display: block;
-  width: 100%;
-  overflow-x: auto;
 }
 </style>

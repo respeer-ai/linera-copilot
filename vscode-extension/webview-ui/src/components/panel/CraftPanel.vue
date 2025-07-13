@@ -238,7 +238,7 @@ const taskJsonRequest = async (message: string) => {
   try {
     tasksJson = await requestLLMResponse(personality, message, { jsonFormat: true, isList: true }, exampleTask)
   } catch (error) {
-    messages.value[messages.value.length - 1].content = `Failed generate project tasks: ${error}`
+    messages.value[messages.value.length - 1].content = generateErrorHtml(`Failed generate project tasks: ${error}`)
   }
   messageMode.value = 'Replace';
 
@@ -246,14 +246,18 @@ const taskJsonRequest = async (message: string) => {
     tasks.value = JSON.parse(tasksJson)
   } catch (error) {
     console.log(tasksJson)
-    messages.value[messages.value.length - 1].content = `Failed parse task json: ${error}`
+    messages.value[messages.value.length - 1].content = generateErrorHtml(`Failed parse task json: ${error}`)
+    messageMode.value = 'New';
+    return
   }
 
   try {
     messages.value[messages.value.length - 1].content = projectTasksToHtml(tasks.value)
   } catch (error) {
     console.log(tasks.value)
-    messages.value[messages.value.length - 1].content = `Failed generate task html: ${error}`
+    messages.value[messages.value.length - 1].content = generateErrorHtml(`Failed generate task html: ${error}`)
+    messageMode.value = 'New';
+    return
   }
 
   projectTaskManager.value = new ProjectTaskManager(tasks.value[0]);

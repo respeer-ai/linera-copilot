@@ -47,7 +47,7 @@ export async function requestLLMResponse(
 
   if (options.jsonFormat) {
     const example = JSON.stringify(jsonExample)
-    prompt += `\nReturn ONLY a JSON ${options.isList ? "array" : "object"}, with each step following this structure: ${example}\n`
+    prompt += `\nReturn ONLY a valid JSON ${options.isList ? "array" : "object"}, with each step following this structure: ${example}\n`
     if (options.isList) {
       prompt += '\nIt could have nested items.'
     }
@@ -193,7 +193,9 @@ export async function* requestToolCallsStream(
     throw new Error("LLM API configuration is missing");
   }
 
-  // ========= Phase 1: Request for user-friendly text only =========
+  // =================== Phase 1: 分析/解释阶段 ===================
+  let fullText = "";
+
   const textResponse = await fetch(apiUrl, {
     method: "POST",
     headers: {
@@ -206,8 +208,13 @@ export async function* requestToolCallsStream(
         {
           role: "system",
           content: `
-You are a programming assistant. When you respond, only describe to the user in plain text what you plan to do.
-DO NOT include any TOOL_CALL: section in this response.
+You are a programming assistant.
+
+Step 1: Analyze the user's request.
+If the request can be answered with pure analysis or explanation, directly answer it.
+If the request involves any installation, file creation, fetching, or external action, only describe the plan in natural language.
+
+DO NOT include any TOOL_CALL section or JSON output at this stage.
 `.trim(),
         },
         {
@@ -253,6 +260,7 @@ DO NOT include any TOOL_CALL: section in this response.
             text: content,
             isComplete: false,
           };
+          fullText += content;
         }
       } catch (e) {
         console.warn("Failed to parse text stream:", e);
@@ -260,7 +268,55 @@ DO NOT include any TOOL_CALL: section in this response.
     }
   }
 
-  // ========= Phase 2: Request TOOL_CALLs only =========
+  // =================== Phase 2: 判断是否需要 Tool Call ===================
+  const intentResponse = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: modelName,
+      messages: [
+        {
+          role: "system",
+          content: `
+You are a task classifier.
+
+Given a user's request, determine whether it requires calling tools such as install, generate, fetch, or modify external resources.
+
+Respond ONLY with:
+TOOL_CALL_REQUIRED: true
+or
+TOOL_CALL_REQUIRED: false
+`.trim(),
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      stream: false,
+    }),
+  });
+
+  if (!intentResponse.ok) {
+    yield {
+      type: "error",
+      text: `LLM tool call intent detection failed: ${intentResponse.statusText}`,
+      isComplete: true,
+    };
+    return;
+  }
+
+  const intentText = await intentResponse.text();
+  const requiresToolCall = intentText.includes("TOOL_CALL_REQUIRED: true");
+
+  if (!requiresToolCall) {
+    return;
+  }
+
+  // =================== Phase 3: 正式请求 Tool Call ===================
   const toolResponse = await fetch(apiUrl, {
     method: "POST",
     headers: {
@@ -375,7 +431,7 @@ Format:
   const content = data?.choices?.[0]?.message?.content;
   const _toolCalls = data?.choices?.[0]?.message?.toolCalls;
 
-  console.log(data, content, _toolCalls)
+  console.log(data, content, _toolCalls, _toolCalls?.length)
 
   try {
     if (_toolCalls?.length > 0) {
