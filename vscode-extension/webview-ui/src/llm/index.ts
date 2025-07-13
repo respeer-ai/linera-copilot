@@ -410,7 +410,8 @@ Format:
                 }
               },
               required: ["version"]
-            }
+            },
+            dependencies: ["install_rust", "install_protoc"]
           }
         }
       ],
@@ -429,7 +430,7 @@ Format:
 
   const data = await toolResponse.json();
   const content = data?.choices?.[0]?.message?.content;
-  const _toolCalls = data?.choices?.[0]?.message?.toolCalls;
+  const _toolCalls = data?.choices?.[0]?.message?.tool_calls;
 
   console.log(data, content, _toolCalls, _toolCalls?.length)
 
@@ -442,11 +443,23 @@ Format:
         isComplete: true,
       };
     } else if (typeof content === "string" && content.trim()) {
-      yield {
-        type: "error",
-        text: content,
-        isComplete: true,
-      };
+      try {
+        const toolCalls: ToolCall[] = JSON.parse(content);
+        if (toolCalls.length > 0) {
+          yield {
+            type: "tool_call",
+            toolCalls,
+            isComplete: true,
+          };
+          return;
+        }
+      } catch {
+        yield {
+          type: "error",
+          text: content,
+          isComplete: true,
+        };
+      }
     } else {
       yield {
         type: "error",
