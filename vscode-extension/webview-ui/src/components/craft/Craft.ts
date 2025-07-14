@@ -45,22 +45,25 @@ export class ProjectTaskManager {
 
       const subTask = task.subTasks[index];
 
-      // 如果还有子任务，先推进子任务
-      if (subTask.subTasks && subTask.subTasks.length > 0) {
+      // ✅ 空数组也是叶子任务，应执行自己
+      const hasNested = Array.isArray(subTask.subTasks) && subTask.subTasks.length > 0;
+
+      if (hasNested) {
         this.taskStack.push({ taskId: subTask.id, index: 0 });
         continue;
       }
 
-      // 是叶子任务，就执行它
+      // ✅ 执行叶子任务
       for await (const chunk of executeSubTask(subTask)) {
         yield chunk;
       }
 
-      // 执行完后更新 index
+      // ✅ 任务完成后，推进当前层 index
       this.taskStack[this.taskStack.length - 1].index++;
       return;
     }
   }
+
 
   /**
    * 一次性执行所有任务，返回完整 LLM 响应流
@@ -86,32 +89,31 @@ export class ProjectTaskManager {
    * @returns 下一个子任务或null（如果没有更多任务）
    */
   public getNextTaskInfo(): SubTask | null {
-  // 克隆栈副本
-  const stackCopy = [...this.taskStack];
+    const stackCopy = [...this.taskStack];
 
-  while (stackCopy.length > 0) {
-    const { taskId, index } = stackCopy[stackCopy.length - 1];
-    const task = this.taskMap.get(taskId);
+    while (stackCopy.length > 0) {
+      const { taskId, index } = stackCopy[stackCopy.length - 1];
+      const task = this.taskMap.get(taskId);
 
-    if (!task || !task.subTasks || index >= task.subTasks.length) {
-      stackCopy.pop(); // 只修改副本
-      continue;
+      if (!task || !task.subTasks || index >= task.subTasks.length) {
+        stackCopy.pop();
+        continue;
+      }
+
+      const subTask = task.subTasks[index];
+
+      const hasNested = Array.isArray(subTask.subTasks) && subTask.subTasks.length > 0;
+
+      if (hasNested) {
+        stackCopy.push({ taskId: subTask.id, index: 0 });
+        continue;
+      }
+
+      return subTask;
     }
 
-    const subTask = task.subTasks[index];
-
-    // 如果这个 subTask 还有子任务，向下钻一层继续模拟
-    if (subTask.subTasks && subTask.subTasks.length > 0) {
-      stackCopy.push({ taskId: subTask.id, index: 0 });
-      continue;
-    }
-
-    // 找到下一个实际要执行的任务
-    return subTask;
+    return null;
   }
-
-  return null; // 没有更多任务
-}
 
 }
 

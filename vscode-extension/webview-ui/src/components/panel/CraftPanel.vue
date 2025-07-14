@@ -44,6 +44,7 @@ import MessageList from '../message/MessageList.vue';
 import { BackendCli } from '../../backend';
 import { generateToolCallRunningHtml } from '../../tools';
 import { generateErrorHtml } from '../../error';
+import { createSuccessHtml } from '../../success';
 
 const cards = ref([
   {
@@ -150,9 +151,12 @@ const executeToolCall = async (toolCall: ToolCall) => {
 
   try {
     await BackendCli.executeToolCall(toolCall)
+    messages.value[messages.value.length - 1].content = createSuccessHtml(`Executing tool call: ${toolCall.function.name}`)
   } catch (error) {
     messages.value[messages.value.length - 1].content = generateErrorHtml(`Executing tool call: ${toolCall.function.name}`, `Failed to execute tool call: ${error}`)
   }
+
+  messageMode.value = 'New';
 }
 
 const executeToolCalls = async (task: SubTask) => {

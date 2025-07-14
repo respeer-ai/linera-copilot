@@ -3,13 +3,13 @@ import * as iconv from "iconv-lite";
 import { executeInTerminal } from "./executeInTreminal";
 
 /**
- * 安装 Rust（即安装 rustup 和 cargo）
+ * 安装 Linera SDK（即安装 rustup 和 cargo）
  */
-export async function installRust(): Promise<{ success: boolean; message?: string }> {
+export async function installLineraSdk(): Promise<{ success: boolean; message?: string }> {
   const platform = os.platform();
 
   try {
-    console.log("[Tool] Installing Rust...");
+    console.log("[Tool] Installing Linera SDK...");
 
     let command: string;
 
@@ -25,7 +25,7 @@ export async function installRust(): Promise<{ success: boolean; message?: strin
 
     const rc = await executeInTerminal(command)
 
-    console.log("[Tool] Rust installed successfully:\n", rc.logs);
+    console.log("[Tool] Linera SDK installed successfully:\n", rc.logs);
     return rc;
   } catch ({ error, stderr }: any) {
     let message: string;
@@ -41,7 +41,7 @@ export async function installRust(): Promise<{ success: boolean; message?: strin
       message = stderr.toString("utf8");
     }
 
-    console.error("[Tool] Failed to install Rust:", message);
+    console.error("[Tool] Failed to install Linera SDK:", message);
     throw new Error(message);
   }
 }
