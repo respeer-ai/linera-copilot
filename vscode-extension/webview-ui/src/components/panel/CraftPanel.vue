@@ -142,23 +142,22 @@ const executeIntent = async (intent: UserIntent) => {
 }
 
 const executeToolCall = async (toolCall: ToolCall) => {
-  console.log('WebView Executing tool call:', toolCall);
   messages.value.push({
     sender: 'llm',
     content: generateToolCallRunningHtml(toolCall)
   })
   messageMode.value = 'Replace';
 
-  BackendCli.executeToolCall(toolCall)
+  try {
+    await BackendCli.executeToolCall(toolCall)
+  } catch (error) {
+    messages.value[messages.value.length - 1].content = generateErrorHtml(`Executing tool call: ${toolCall.function.name}`, `Failed to execute tool call: ${error}`)
+  }
 }
 
 const executeToolCalls = async (task: SubTask) => {
   for (const toolCall of task.toolCalls || []) {
-    try {
-      executeToolCall(toolCall)
-    } catch (error) {
-      messages.value[messages.value.length - 1].content = `${error}`
-    }
+    await executeToolCall(toolCall)
   }
 }
 
@@ -181,7 +180,7 @@ const executeNextTask = async () => {
   }
 
   if (task.toolCalls?.length) {
-    executeToolCalls(task)
+    await executeToolCalls(task)
   }
 }
 
@@ -282,15 +281,20 @@ const splitTaskRequest = async (prompt: string) => {
     const responseGenerator = streamLLMResponse(personality, prompt);
     await onStreamLLMResponse(responseGenerator, true, () => {
       hasMessage = true
+    }, () => {
+      hasMessage = true
+    }, () => {
+      hasMessage = true
+    }, () => {
+      hasMessage = true
     })
   } catch (error) {
-    console.log(111, `${error}`, hasMessage)
     if (!hasMessage) {
-      messages.value[messages.value.length - 1].content = `${error}`
+      messages.value[messages.value.length - 1].content = generateErrorHtml(`Splitting task: ${prompt}`, `Failed split project tasks: ${error}`)
     } else {
       messages.value.push({
         sender: 'llm',
-        content: generateErrorHtml('Splitting task', `Failed split project tasks: ${error}`)
+        content: generateErrorHtml(`Splitting task: ${prompt}`, `Failed split project tasks: ${error}`)
       })
     }
   }

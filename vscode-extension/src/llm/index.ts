@@ -1,8 +1,15 @@
 import { PluginSettings } from '../settings';
 
-export interface ToolCall {
+/**
+ * Represents a function call with its name and arguments
+ */
+export interface FunctionCall {
   name: string;
-  args: Record<string, any>;
+  arguments: Record<string, any>;
+}
+
+export interface ToolCall {
+  function: FunctionCall
   text: string; // Optional, for human-readable description
 }
 
@@ -327,14 +334,13 @@ Example:
       const parsed: ToolCall[] = JSON.parse(toolCallJson);
       for (const tc of parsed) {
         if (
-          typeof tc.name === "string" &&
-          typeof tc.args === "object" &&
-          tc.args !== null &&
+          typeof tc.function?.name === "string" &&
+          typeof tc.function?.arguments === "object" &&
+          tc.function?.arguments !== null &&
           typeof tc.text === "string"
         ) {
           toolCalls.push({
-            name: tc.name,
-            args: tc.args,
+            function: { ...tc.function },
             text: tc.text
           });
         }
@@ -348,7 +354,7 @@ Example:
   }
 
   const validToolCalls = toolCalls.filter((tc) =>
-    supportedTools.includes(tc.name)
+    supportedTools.includes(tc.function?.name)
   );
   if (validToolCalls.length !== toolCalls.length) {
     console.warn("Some tool calls were filtered as they are not supported");

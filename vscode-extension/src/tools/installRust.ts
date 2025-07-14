@@ -7,11 +7,11 @@ const execAsync = promisify(exec);
 /**
  * 安装 Rust（即安装 rustup 和 cargo）
  */
-export async function installCargo(): Promise<{ success: boolean; message?: string }> {
+export async function installRust(): Promise<{ success: boolean; message?: string }> {
   const platform = os.platform();
 
   try {
-    console.log('[Tool] Installing Cargo...');
+    console.log('[Tool] Installing Rust...');
 
     if (platform === 'win32') {
       // Windows 平台使用 PowerShell
@@ -23,10 +23,10 @@ export async function installCargo(): Promise<{ success: boolean; message?: stri
       await execAsync(command);
     }
 
-    console.log('[Tool] Cargo installed successfully.');
+    console.log('[Tool] Rust installed successfully.');
     return { success: true };
   } catch (error: any) {
-    console.error('[Tool] Failed to install Cargo:', error.message);
-    return { success: false, message: error.message };
+    console.error('[Tool] Failed to install Rust:', error.message);
+    throw error;
   }
 }

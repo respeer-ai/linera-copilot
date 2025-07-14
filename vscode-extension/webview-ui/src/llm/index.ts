@@ -1,8 +1,15 @@
 import { PluginSettings } from '../settings';
 
-export interface ToolCall {
+/**
+ * Represents a function call with its name and arguments
+ */
+export interface FunctionCall {
   name: string;
-  args: Record<string, any>;
+  arguments: Record<string, any>;
+}
+
+export interface ToolCall {
+  function: FunctionCall
   text: string; // Optional, for human-readable description
 }
 
@@ -334,33 +341,24 @@ TOOL_CALL_REQUIRED: false
         {
           role: "system",
           content: `
-Respond ONLY with the TOOL_CALL JSON array, no explanation.
+You are a DevOps assistant. Based on the user's prompt, decide which tools to call and with what arguments.
 
 If the user's prompt contains a Linera SDK version (e.g. "v1.1.0"), extract it.  
-If no version is found, use the default: Linera SDK = "v0.14.1".
+If no version is found, default to Linera SDK version "v0.14.1".
 
 Then determine:
 
 - Rust version:  
-  - Use "1.85.0" if Linera SDK is "v0.14.1"  
-  - Otherwise, choose version based on known compatibility or default to "1.85.0"
+  - If Linera SDK is "v0.14.1", use Rust version "1.85.0"  
+  - Otherwise, default to "1.85.0"
 
 - Protoc version:  
-  - Use platform-specific version (default "3.21.7" unless user requests a different one)
+  - Default to "3.21.7"
+  - Use platform "linux-x86_64" unless otherwise specified
 
-Return tool calls in this format:
-[
-  {
-    "name": "install_rust",
-    "args": { "version": "<rust_version>", "channel": "stable" },
-    "text": "Installing Rust version <rust_version> for Linera SDK."
-  },
-  {
-    "name": "install_protoc",
-    "args": { "version": "<protoc_version>", "platform": "linux-x86_64" },
-    "text": "Installing protoc version <protoc_version> for Linera SDK."
-  }
-]
+Only call tools defined in the system.
+Call all relevant tools with appropriate arguments.
+Do not explain your reasoning. Do not return plain text or JSON — respond only with function calls.
 `.trim(),
         },
         {
@@ -391,8 +389,25 @@ Return tool calls in this format:
                 }
               },
               required: ["version"],
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "install_wasm_target",
+            description: "Installs the wasm32-unknown-unknown target for Rust compilation.",
+            parameters: {
+              type: "object",
+              properties: {
+                rust_version: {
+                  type: "string",
+                  description: "The Rust version to install the target for, e.g. 1.85.0"
+                }
+              },
+              required: ["rust_version"]
             },
-            dependencies: ["get_required_rust_version"]
+            dependencies: ["install_rust"]
           }
         },
         {
@@ -437,7 +452,7 @@ Return tool calls in this format:
               },
               required: ["version"]
             },
-            dependencies: ["install_rust", "install_protoc"]
+            dependencies: ["install_rust", "install_protoc", "install_wasm_target"]
           }
         }
       ],
@@ -459,6 +474,8 @@ Return tool calls in this format:
   const content = data?.choices?.[0]?.message?.content;
   const _toolCalls = data?.choices?.[0]?.message?.tool_calls;
 
+  console.log(content, _toolCalls, data)
+
   try {
     if (_toolCalls?.length > 0) {
       const toolCalls: ToolCall[] = JSON.parse(JSON.stringify(_toolCalls));
@@ -467,7 +484,7 @@ Return tool calls in this format:
           call.text = content;
         }
         if (!call.text?.trim()) {
-          call.text = `Executing tool call: ${call.name}`;
+          call.text = `Executing tool call: ${call.function?.name}`;
         }
       });
       yield {

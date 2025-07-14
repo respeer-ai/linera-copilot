@@ -10,20 +10,20 @@ interface MessagePayload<T = any> {
   error?: string;
 }
 
-function handleGetSettings(): MessagePayload<Record<string, any>> {
+function handleGetSettings(commandResponse: string): MessagePayload<Record<string, any>> {
   const settings = PluginSettings.getAllSettings();
   return {
-    command: 'getSettingsResponse',
+    command: commandResponse,
     success: true,
     data: settings,
   };
 }
 
-async function handleSaveSettings(payload: MessagePayload<Record<string, any>>): Promise<MessagePayload<Record<string, any>>> {
+async function handleSaveSettings(payload: MessagePayload<Record<string, any>>, commandResponse: string): Promise<MessagePayload<Record<string, any>>> {
   const settings = PluginSettings.getAllSettings();
   await PluginSettings.saveAllSettings(payload.updated as Record<string, string>);
   return {
-    command: 'saveSettingsResponse',
+    command: commandResponse,
     success: true,
     updated: settings,
   };
@@ -67,65 +67,65 @@ async function handleSetSingleSetting(
 export const onMessage = async (webview: vscode.Webview, message: any) => {
   let payload: MessagePayload;
 
-  console.log('Received message:', message);
+  const command = message.command;
+  const commandResponse = `${command}Response`
 
   try {
-    switch (message.command) {
+    switch (command) {
       case 'getSettings':
-        payload = handleGetSettings();
+        payload = handleGetSettings(commandResponse);
         break;
 
       case 'saveSettings':
-        payload = await handleSaveSettings(message);
+        payload = await handleSaveSettings(message, commandResponse);
         break;
 
       case 'executeToolCall':
-        console.log('Executing tool call:', message.data);
         await executeToolCall(message.data)
         payload = {
-          command: 'executeToolCallResponse',
+          command: commandResponse,
           success: true
         }
         break;
 
       case 'getSdkVersion':
-        payload = await handleGetSingleSetting('getSdkVersionResponse', PluginSettings.getSdkVersion, 'sdkVersion');
+        payload = await handleGetSingleSetting(commandResponse, PluginSettings.getSdkVersion, 'sdkVersion');
         break;
       case 'setSdkVersion':
-        payload = await handleSetSingleSetting('setSdkVersionResponse', PluginSettings.setSdkVersion, 'sdkVersion', message.value);
+        payload = await handleSetSingleSetting(commandResponse, PluginSettings.setSdkVersion, 'sdkVersion', message.value);
         break;
 
       case 'getModelUrl':
-        payload = await handleGetSingleSetting('getModelUrlResponse', PluginSettings.getModelUrl, 'modelUrl');
+        payload = await handleGetSingleSetting(commandResponse, PluginSettings.getModelUrl, 'modelUrl');
         break;
       case 'setModelUrl':
-        payload = await handleSetSingleSetting('setModelUrlResponse', PluginSettings.setModelUrl, 'modelUrl', message.value);
+        payload = await handleSetSingleSetting(commandResponse, PluginSettings.setModelUrl, 'modelUrl', message.value);
         break;
 
       case 'getApiToken':
-        payload = await handleGetSingleSetting('getApiTokenResponse', PluginSettings.getApiToken, 'apiToken');
+        payload = await handleGetSingleSetting(commandResponse, PluginSettings.getApiToken, 'apiToken');
         break;
       case 'setApiToken':
-        payload = await handleSetSingleSetting('setApiTokenResponse', PluginSettings.setApiToken, 'apiToken', message.value);
+        payload = await handleSetSingleSetting(commandResponse, PluginSettings.setApiToken, 'apiToken', message.value);
         break;
 
       case 'getModelName':
-        payload = await handleGetSingleSetting('getModelNameResponse', PluginSettings.getModelName, 'modelName');
+        payload = await handleGetSingleSetting(commandResponse, PluginSettings.getModelName, 'modelName');
         break;
       case 'setModelName':
-        payload = await handleSetSingleSetting('setModelNameResponse', PluginSettings.setModelName, 'modelName', message.value);
+        payload = await handleSetSingleSetting(commandResponse, PluginSettings.setModelName, 'modelName', message.value);
         break;
 
       case 'getProjectRoot':
-        payload = await handleGetSingleSetting('getProjectRootResponse', PluginSettings.getProjectRoot, 'projectRoot');
+        payload = await handleGetSingleSetting(commandResponse, PluginSettings.getProjectRoot, 'projectRoot');
         break;
       case 'setProjectRoot':
-        payload = await handleSetSingleSetting('setProjectRootResponse', PluginSettings.setProjectRoot, 'projectRoot', message.value);
+        payload = await handleSetSingleSetting(commandResponse, PluginSettings.setProjectRoot, 'projectRoot', message.value);
         break;
 
       default:
         payload = {
-          command: 'error',
+          command: commandResponse,
           success: false,
           error: `Unknown command: ${message.command}`,
         };
@@ -133,7 +133,7 @@ export const onMessage = async (webview: vscode.Webview, message: any) => {
     }
   } catch (error) {
     payload = {
-      command: 'error',
+      command: commandResponse,
       success: false,
       error: error instanceof Error ? error.message : String(error),
     };
