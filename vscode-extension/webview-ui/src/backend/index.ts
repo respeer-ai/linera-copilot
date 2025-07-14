@@ -33,7 +33,7 @@ window.addEventListener('message', (event) => {
 });
 
 // 6️⃣ 简化发送消息，返回 Promise
-function sendCommand<T = any>(command: string, value?: any): Promise<T> {
+function sendCommand<T = any>(command: string, data?: any): Promise<T> {
   return new Promise((resolve, reject) => {
     const responseCommand = `${command}Response`;
     pendingResponses.set(responseCommand, (payload: MessagePayload) => {
@@ -44,7 +44,7 @@ function sendCommand<T = any>(command: string, value?: any): Promise<T> {
       }
     });
 
-    vscode.postMessage(value !== undefined ? { command, value } : { command });
+    vscode.postMessage(data !== undefined ? { command, data } : { command });
   });
 }
 

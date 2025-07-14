@@ -79,7 +79,7 @@ const onMessageInputResize = (size: { height: number; }) => {
   bodyHeight.value = `${window.innerHeight - size.height - 48}px`
 }
 
-const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse, void, unknown>, needTaskJson: boolean) => {
+const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse, void, unknown>, needTaskJson: boolean, onNew?: () => void, onAppend?: () => void, onComplete?: () => void, onReplace?: () => void) => {
   for await (const response of responseGenerator) {
     if (response.isComplete) {
       messageMode.value = 'New';
@@ -91,11 +91,12 @@ const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse
           }
           messages.value.splice(index, 1, message);
       } else if (response.type === 'error') {
-          messages.value.push({
-            sender: 'llm',
-            content: generateErrorHtml(response.taskPrompt, response.text)
-          })
-        }
+        messages.value.push({
+          sender: 'llm',
+          content: generateErrorHtml(response.taskPrompt, response.text)
+        })
+      }
+      onComplete?.()
       if (needTaskJson) {
         await taskJsonRequest(messages.value[messages.value.length - 1].content)
       }
@@ -108,11 +109,13 @@ const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse
             content: response.text
           })
         }
+        onNew?.()
       } else if (messageMode.value === 'Replace') {
         if (response.type === 'text') {
           messages.value[messages.value.length - 1].content = response.text
         }
         messageMode.value = 'Append';
+        onReplace?.()
       } else {
         if (response.type === 'text') {
           const index = messages.value.length - 1
@@ -121,6 +124,7 @@ const onStreamLLMResponse = async (responseGenerator: AsyncGenerator<LLMResponse
             content: messages.value[index].content + response.text
           }
           messages.value.splice(index, 1, message);
+          onAppend?.()
         }
       }
     }
@@ -271,12 +275,24 @@ const splitTaskRequest = async (prompt: string) => {
   })
   messageMode.value = 'Replace';
 
+  let hasMessage = false
+
   try {
     const personality = 'You are an experienced top-tier engineer and architect who excels at breaking down tasks into manageable components.'
     const responseGenerator = streamLLMResponse(personality, prompt);
-    await onStreamLLMResponse(responseGenerator, true)
+    await onStreamLLMResponse(responseGenerator, true, () => {
+      hasMessage = true
+    })
   } catch (error) {
-    messages.value[messages.value.length - 1].content = `${error}`
+    console.log(111, `${error}`, hasMessage)
+    if (!hasMessage) {
+      messages.value[messages.value.length - 1].content = `${error}`
+    } else {
+      messages.value.push({
+        sender: 'llm',
+        content: generateErrorHtml('Splitting task', `Failed split project tasks: ${error}`)
+      })
+    }
   }
 }
 

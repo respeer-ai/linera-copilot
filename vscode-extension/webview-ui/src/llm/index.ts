@@ -82,6 +82,8 @@ export async function requestLLMResponse(
   }
 
   const data = await response.json();
+
+  console.log(prompt, (data.choices?.[0]?.message?.content as string)?.replace('```json', '').replace('```', ''))
   
   // Default to text content
   return (data.choices?.[0]?.message?.content as string)?.replace('```json', '').replace('```', '') || '';
@@ -333,12 +335,30 @@ TOOL_CALL_REQUIRED: false
           role: "system",
           content: `
 Respond ONLY with the TOOL_CALL JSON array, no explanation.
-Format:
+
+If the user's prompt contains a Linera SDK version (e.g. "v1.1.0"), extract it.  
+If no version is found, use the default: Linera SDK = "v0.14.1".
+
+Then determine:
+
+- Rust version:  
+  - Use "1.85.0" if Linera SDK is "v0.14.1"  
+  - Otherwise, choose version based on known compatibility or default to "1.85.0"
+
+- Protoc version:  
+  - Use platform-specific version (default "3.21.7" unless user requests a different one)
+
+Return tool calls in this format:
 [
   {
-    "name": "install_linera_sdk",
-    "args": { "version": "v1.1.0", "withExamples": false },
-    "text": "I will now install Linera SDK version v1.1.0 for you."
+    "name": "install_rust",
+    "args": { "version": "<rust_version>", "channel": "stable" },
+    "text": "Installing Rust version <rust_version> for Linera SDK."
+  },
+  {
+    "name": "install_protoc",
+    "args": { "version": "<protoc_version>", "platform": "linux-x86_64" },
+    "text": "Installing protoc version <protoc_version> for Linera SDK."
   }
 ]
 `.trim(),
@@ -354,7 +374,9 @@ Format:
           type: "function",
           function: {
             name: "install_rust",
-            description: "Installs the Rust programming language and its development toolchain, including rustup, cargo, and rustc. This tool can be used to install or upgrade Rust, set a specific version, or switch between stable and nightly channels. Common use cases include setting up Rust for new environments, preparing for Linera SDK development, or recovering missing Rust installations.",
+            description: "Installs the Rust programming language and its development toolchain, including rustup, cargo, and rustc. " +
+                         "This tool can be used to install or upgrade Rust, set a specific version, or switch between stable and nightly channels. " +
+                         "Common use cases include setting up Rust for new environments, preparing for Linera SDK development, or recovering missing Rust installations.",
             parameters: {
               type: "object",
               properties: {
@@ -368,8 +390,9 @@ Format:
                   enum: ["stable", "beta", "nightly"]
                 }
               },
-              required: ["version"]
-            }
+              required: ["version"],
+            },
+            dependencies: ["get_required_rust_version"]
           }
         },
         {
